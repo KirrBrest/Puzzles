@@ -1,6 +1,9 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  base: process.env.NODE_ENV === 'production' && process.env.GITHUB_PAGES === 'true' 
+    ? '/kirrbrest-JSFE2025Q3/' 
+    : '/',
   publicDir: 'public',
   server: {
     port: 3000,
