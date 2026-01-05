@@ -9,6 +9,7 @@ export default function createWordCard(word: string, index: number, total: numbe
   const card = document.createElement('div');
   card.className = 'word-card';
   card.textContent = word;
+  card.setAttribute('data-word-length', word.length.toString());
 
   if (index === 0) {
     card.classList.add('word-card-start');

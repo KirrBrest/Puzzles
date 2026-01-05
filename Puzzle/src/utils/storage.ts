@@ -7,13 +7,21 @@ function isUserData(value: unknown): value is UserData {
     return false;
   }
 
-  const obj = value as Record<string, unknown>;
+  if (!('firstName' in value) || !('surname' in value)) {
+    return false;
+  }
+
+  const valueObj: Record<string, unknown> = {};
+  Object.keys(value).forEach((key) => {
+    const val = (value as Record<string, unknown>)[key];
+    valueObj[key] = val;
+  });
 
   return (
-    typeof obj.firstName === 'string' &&
-    typeof obj.surname === 'string' &&
-    obj.firstName.length > 0 &&
-    obj.surname.length > 0
+    typeof valueObj.firstName === 'string' &&
+    typeof valueObj.surname === 'string' &&
+    valueObj.firstName.length > 0 &&
+    valueObj.surname.length > 0
   );
 }
 

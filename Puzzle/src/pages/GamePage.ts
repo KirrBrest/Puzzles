@@ -89,6 +89,8 @@ function startNewRound(
   gameBoard: ReturnType<typeof createGameBoard>
 ): void {
   const words = getSentenceWords(sentence);
+  const currentRow = gameBoard.getCurrentRowIndex();
+  gameBoard.setRowSentence(currentRow, words);
   sourceArea.reset(words);
   setupCardClickHandlers(sourceArea, gameBoard);
 }

@@ -8,6 +8,7 @@ export interface GameBoardResult {
   clearAllRows: () => void;
   getCurrentRowIndex: () => number;
   setCurrentRowIndex: (_index: number) => void;
+  setRowSentence: (_rowIndex: number, _words: string[]) => void;
 }
 
 let currentRowIndex = 0;
@@ -26,15 +27,82 @@ export default function createGameBoard(): GameBoardResult {
     rows.push(row);
   }
 
+  function getCardPadding(card: HTMLElement): { left: number; right: number } {
+    if (card.classList.contains('word-card-start')) {
+      return { left: 12, right: 24 };
+    }
+    if (card.classList.contains('word-card-end')) {
+      return { left: 24, right: 12 };
+    }
+    if (card.classList.contains('word-card-middle')) {
+      return { left: 24, right: 24 };
+    }
+    return { left: 20, right: 20 };
+  }
+
+  function isNumberArray(value: unknown): value is number[] {
+    return Array.isArray(value) && value.every((item) => typeof item === 'number');
+  }
+
+  function calculateCardWidths(row: HTMLElement): void {
+    const rowCards = Array.from(row.children).filter(
+      (child): child is HTMLElement => child instanceof HTMLElement
+    );
+    if (rowCards.length === 0) {
+      return;
+    }
+
+    const sentenceData = row.getAttribute('data-sentence-ratios');
+    const totalPaddingBordersData = row.getAttribute('data-total-padding-borders');
+    if (!sentenceData || !totalPaddingBordersData) {
+      return;
+    }
+
+    const parsed = JSON.parse(sentenceData);
+    if (!isNumberArray(parsed)) {
+      return;
+    }
+    const sentenceRatios = parsed;
+    const totalRatio = sentenceRatios.reduce((sum, ratio) => sum + ratio, 0);
+    const totalPaddingAndBorders = parseFloat(totalPaddingBordersData);
+
+    if (totalRatio > 0) {
+      const rowWidth = row.getBoundingClientRect().width || row.offsetWidth;
+      const borderWidth = 2;
+      const availableWidth = rowWidth - totalPaddingAndBorders;
+
+      if (availableWidth > 0) {
+        rowCards.forEach((card) => {
+          const ratio = parseFloat(card.getAttribute('data-width-ratio') || '0');
+          if (ratio > 0) {
+            const padding = getCardPadding(card);
+            const cardContentWidth = (ratio / totalRatio) * availableWidth;
+            const cardTotalWidth =
+              cardContentWidth + padding.left + padding.right + borderWidth * 2;
+            const widthPercentage = (cardTotalWidth / rowWidth) * 100;
+            card.style.setProperty('--card-width', `${widthPercentage}%`);
+          }
+        });
+      }
+    }
+  }
+
   function addCardToRow(rowIndex: number, card: HTMLElement): void {
     if (rowIndex >= 0 && rowIndex < rows.length) {
       const row = rows[rowIndex];
       if (row) {
-        const cardClone = card.cloneNode(true) as HTMLElement;
+        const cardClone = card.cloneNode(true);
+        if (!(cardClone instanceof HTMLElement)) {
+          return;
+        }
 
         cardClone.classList.add('word-card-placed');
 
         row.appendChild(cardClone);
+
+        setTimeout(() => {
+          calculateCardWidths(row);
+        }, 0);
       }
     }
   }
@@ -68,6 +136,49 @@ export default function createGameBoard(): GameBoardResult {
     }
   }
 
+  function getCardPaddingByIndex(index: number, total: number): { left: number; right: number } {
+    if (index === 0) {
+      return { left: 12, right: 24 };
+    }
+    if (index === total - 1) {
+      return { left: 24, right: 12 };
+    }
+    return { left: 24, right: 24 };
+  }
+
+  function setRowSentence(rowIndex: number, words: string[]): void {
+    if (rowIndex >= 0 && rowIndex < rows.length) {
+      const row = rows[rowIndex];
+      if (row) {
+        const totalLength = words.reduce((sum, word) => sum + word.length, 0);
+        const ratios = words.map((word) => word.length / totalLength);
+        const borderWidth = 2;
+        const totalPaddingAndBorders = words.reduce((sum, _word, index) => {
+          const padding = getCardPaddingByIndex(index, words.length);
+          return sum + padding.left + padding.right + borderWidth * 2;
+        }, 0);
+        row.setAttribute('data-sentence-ratios', JSON.stringify(ratios));
+        row.setAttribute('data-total-padding-borders', totalPaddingAndBorders.toString());
+      }
+    }
+  }
+
+  const resizeHandler = (): void => {
+    rows.forEach((row) => {
+      if (row.children.length > 0) {
+        calculateCardWidths(row);
+      }
+    });
+  };
+
+  window.addEventListener('resize', resizeHandler);
+
+  const resizeObserver = new ResizeObserver(() => {
+    resizeHandler();
+  });
+
+  resizeObserver.observe(board);
+
   return {
     container: board,
     rows,
@@ -76,5 +187,6 @@ export default function createGameBoard(): GameBoardResult {
     clearAllRows,
     getCurrentRowIndex,
     setCurrentRowIndex,
+    setRowSentence,
   };
 }

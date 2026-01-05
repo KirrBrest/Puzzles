@@ -26,6 +26,17 @@ function updateCardStyles(cards: WordCardResult[]): void {
   });
 }
 
+function calculateSourceCardWidth(card: WordCardResult, allWords: string[]): void {
+  const wordLength = card.word.length;
+  const totalLength = allWords.reduce((sum, word) => sum + word.length, 0);
+
+  if (totalLength > 0) {
+    const widthRatio = wordLength / totalLength;
+    card.element.style.setProperty('--card-width', `${widthRatio * 100}%`);
+    card.element.setAttribute('data-width-ratio', widthRatio.toString());
+  }
+}
+
 export default function createSourceCardsArea(words: string[]): SourceCardsAreaResult {
   const container = document.createElement('div');
   container.className = 'source-cards-area';
@@ -39,6 +50,7 @@ export default function createSourceCardsArea(words: string[]): SourceCardsAreaR
   cards.push(...shuffledCards);
 
   shuffledCards.forEach((card) => {
+    calculateSourceCardWidth(card, words);
     container.appendChild(card.element);
   });
 
@@ -81,6 +93,7 @@ export default function createSourceCardsArea(words: string[]): SourceCardsAreaR
     const newShuffledCards = shuffleArray([...newCards]);
 
     newShuffledCards.forEach((card) => {
+      calculateSourceCardWidth(card, newWords);
       cards.push(card);
       container.appendChild(card.element);
     });

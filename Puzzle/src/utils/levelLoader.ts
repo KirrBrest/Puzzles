@@ -8,8 +8,17 @@ function isLevelCollection(data: unknown): data is LevelCollection {
     return false;
   }
 
-  const obj = data as Record<string, unknown>;
-  return Array.isArray(obj.rounds);
+  if (!('rounds' in data)) {
+    return false;
+  }
+
+  const dataObj: Record<string, unknown> = {};
+  Object.keys(data).forEach((key) => {
+    const value = (data as Record<string, unknown>)[key];
+    dataObj[key] = value;
+  });
+
+  return Array.isArray(dataObj.rounds);
 }
 
 export function shuffleArray<T>(array: T[]): T[] {

@@ -101,22 +101,27 @@
   border: none;
   border-radius: 0;
   flex-wrap: nowrap;
+  width: 100%;
 }
 
 .game-board-row .word-card-placed {
-  flex: 1;
+  flex-basis: var(--card-width, auto);
+  width: var(--card-width, auto);
   min-width: 0;
+  max-width: none;
   border-radius: 0;
   margin: 0;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  flex-grow: 0;
 }
 
 .word-card-placed {
   border-radius: 0;
-  padding: 0;
+  padding: 12px 20px;
   height: 100%;
   min-height: 0;
   border-top: 1px solid rgba(74, 144, 226, 0.5);
@@ -125,6 +130,7 @@
   align-items: center;
   justify-content: center;
   border-color: rgba(74, 144, 226, 0.5);
+  box-sizing: border-box;
 }
 
 .source-cards-area {
@@ -132,11 +138,17 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  justify-content: center;
+  justify-content: flex-start;
+  align-items: flex-start;
   padding: 20px;
   background-color: var(--color-background);
   border: 2px solid var(--color-border);
   border-radius: 8px;
+}
+
+.source-cards-area .word-card {
+  width: var(--card-width, auto);
+  flex-shrink: 0;
 }
 
 .word-card {
@@ -158,6 +170,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: clamp(60px, 5vw, 80px);
+  max-width: clamp(150px, 20vw, 300px);
+  box-sizing: border-box;
 }
 
 .word-card:hover {
