@@ -24,5 +24,11 @@ export default function createInputField(
 
   fieldContainer.appendChild(input);
 
-  return { container: fieldContainer, input };
+  const errorMessage = document.createElement('span');
+  errorMessage.className = 'input-error';
+  errorMessage.setAttribute('role', 'alert');
+  errorMessage.setAttribute('aria-live', 'polite');
+  fieldContainer.appendChild(errorMessage);
+
+  return { container: fieldContainer, input, errorMessage };
 }

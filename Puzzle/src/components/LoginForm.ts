@@ -1,5 +1,22 @@
 import createInputField from './InputField';
 import createLoginButton from './LoginButton';
+import { validateNameField, formatNameInput } from '../utils/validation';
+
+function updateFieldError(
+  errorElement: HTMLElement,
+  input: HTMLInputElement,
+  errorMessage: string
+): void {
+  if (errorMessage) {
+    errorElement.textContent = errorMessage;
+    errorElement.classList.add('input-error-visible');
+    input.classList.add('input-error-state');
+  } else {
+    errorElement.textContent = '';
+    errorElement.classList.remove('input-error-visible');
+    input.classList.remove('input-error-state');
+  }
+}
 
 export default function createLoginForm(): HTMLElement {
   const form = document.createElement('form');
@@ -12,18 +29,49 @@ export default function createLoginForm(): HTMLElement {
 
   loginButton.disabled = true;
 
-  const handleInputChange = (): void => {
-    const firstNameValue = firstNameField.input.value.trim();
-    const surnameValue = surnameField.input.value.trim();
+  let firstNameValid = false;
+  let surnameValid = false;
 
-    loginButton.disabled = !(firstNameValue && surnameValue);
+  const validateForm = (): void => {
+    const firstNameValue = firstNameField.input.value;
+    const surnameValue = surnameField.input.value;
+
+    const firstNameValidation = validateNameField('firstName', firstNameValue);
+    const surnameValidation = validateNameField('surname', surnameValue);
+
+    firstNameValid = firstNameValidation.isValid;
+    surnameValid = surnameValidation.isValid;
+
+    updateFieldError(
+      firstNameField.errorMessage,
+      firstNameField.input,
+      firstNameValidation.errorMessage
+    );
+    updateFieldError(surnameField.errorMessage, surnameField.input, surnameValidation.errorMessage);
+
+    loginButton.disabled = !(firstNameValid && surnameValid);
   };
 
-  firstNameField.input.addEventListener('input', handleInputChange);
-  surnameField.input.addEventListener('input', handleInputChange);
+  const handleFirstNameInput = (): void => {
+    const formatted = formatNameInput(firstNameField.input.value);
+    firstNameField.input.value = formatted;
+    validateForm();
+  };
+
+  const handleSurnameInput = (): void => {
+    const formatted = formatNameInput(surnameField.input.value);
+    surnameField.input.value = formatted;
+    validateForm();
+  };
+
+  firstNameField.input.addEventListener('input', handleFirstNameInput);
+  firstNameField.input.addEventListener('blur', validateForm);
+  surnameField.input.addEventListener('input', handleSurnameInput);
+  surnameField.input.addEventListener('blur', validateForm);
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
+    validateForm();
   });
 
   form.appendChild(firstNameField.container);

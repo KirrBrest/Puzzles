@@ -45,7 +45,9 @@
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
   outline: none;
 }
 
@@ -54,8 +56,22 @@
   box-shadow: 0 0 0 3px var(--color-shadow);
 }
 
-.input-control:invalid:not(:placeholder-shown) {
-  border-color: #E74C3C;
+.input-control.input-error-state {
+  border-color: var(--color-error);
+}
+
+.input-error {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--color-error);
+  margin-top: 6px;
+  min-height: 20px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.input-error.input-error-visible {
+  opacity: 1;
 }
 
 .login-button {
@@ -69,7 +85,10 @@
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease,
+    box-shadow 0.2s ease;
   margin-top: 8px;
 }
 
@@ -88,4 +107,3 @@
   cursor: not-allowed;
   opacity: 0.6;
 }
-
