@@ -6,10 +6,12 @@ import createGameBoard from '../components/GameBoard';
 import createSourceCardsArea from '../components/SourceCardsArea';
 import createNewGameButton from '../components/NewGameButton';
 import createCheckButton from '../components/CheckButton';
+import createAutoCompleteButton from '../components/AutoCompleteButton';
 import { getSentencesForGame, getSentenceWords } from '../utils/levelLoader';
 import { WordCardResult } from '../components/WordCard';
 import { isSentenceComplete, validateSentence } from '../utils/sentenceValidator';
 import { clearAllHighlights, highlightCardsByValidation } from '../utils/cardHighlighter';
+import { autoCompleteSentence } from '../utils/autoComplete';
 
 function clearContainer(container: HTMLElement): void {
   while (container.firstChild) {
@@ -47,7 +49,8 @@ function handleCardClick(
   sourceArea: ReturnType<typeof createSourceCardsArea>,
   gameBoard: ReturnType<typeof createGameBoard>,
   getCurrentSentence: () => string | undefined,
-  checkButton: HTMLButtonElement
+  checkButton: HTMLButtonElement,
+  autoCompleteButton: HTMLButtonElement
 ): void {
   if (card.isUsed) {
     return;
@@ -63,8 +66,10 @@ function handleCardClick(
     checkButton.disabled = !isSentenceComplete(currentSentence, rowCards);
     clearAllHighlights(rowCards);
     switchToCheckMode(checkButton);
+    updateAutoCompleteButtonState(currentSentence, gameBoard, autoCompleteButton);
   } else {
     checkButton.disabled = true;
+    autoCompleteButton.disabled = true;
   }
 }
 
@@ -73,7 +78,8 @@ function handlePlacedCardClick(
   sourceArea: ReturnType<typeof createSourceCardsArea>,
   gameBoard: ReturnType<typeof createGameBoard>,
   getCurrentSentence: () => string | undefined,
-  checkButton: HTMLButtonElement
+  checkButton: HTMLButtonElement,
+  autoCompleteButton: HTMLButtonElement
 ): void {
   const currentRow = gameBoard.getCurrentRowIndex();
   const originalCardId = cardElement.getAttribute('data-original-card-id');
@@ -96,8 +102,10 @@ function handlePlacedCardClick(
       checkButton.disabled = !isSentenceComplete(currentSentence, rowCards);
       clearAllHighlights(rowCards);
       switchToCheckMode(checkButton);
+      updateAutoCompleteButtonState(currentSentence, gameBoard, autoCompleteButton);
     } else {
       checkButton.disabled = true;
+      autoCompleteButton.disabled = true;
     }
   }
 }
@@ -106,7 +114,8 @@ function setupCardClickHandlers(
   sourceArea: ReturnType<typeof createSourceCardsArea>,
   gameBoard: ReturnType<typeof createGameBoard>,
   getCurrentSentence: () => string | undefined,
-  checkButton: HTMLButtonElement
+  checkButton: HTMLButtonElement,
+  autoCompleteButton: HTMLButtonElement
 ): void {
   const clickHandler = (e: Event): void => {
     const { target } = e;
@@ -125,7 +134,7 @@ function setupCardClickHandlers(
 
     const card = sourceArea.cards.find((c) => c.element === cardElement);
     if (card && !card.isUsed) {
-      handleCardClick(card, sourceArea, gameBoard, getCurrentSentence, checkButton);
+      handleCardClick(card, sourceArea, gameBoard, getCurrentSentence, checkButton, autoCompleteButton);
     }
   };
 
@@ -137,11 +146,19 @@ function setupPlacedCardClickHandlers(
   sourceArea: ReturnType<typeof createSourceCardsArea>,
   gameBoard: ReturnType<typeof createGameBoard>,
   getCurrentSentence: () => string | undefined,
-  checkButton: HTMLButtonElement
+  checkButton: HTMLButtonElement,
+  autoCompleteButton: HTMLButtonElement
 ): void {
   const currentRow = gameBoard.getCurrentRowIndex();
   gameBoard.setupRowClickHandler(currentRow, (cardElement) => {
-    handlePlacedCardClick(cardElement, sourceArea, gameBoard, getCurrentSentence, checkButton);
+    handlePlacedCardClick(
+      cardElement,
+      sourceArea,
+      gameBoard,
+      getCurrentSentence,
+      checkButton,
+      autoCompleteButton
+    );
   });
 }
 
@@ -174,11 +191,80 @@ function handleCheck(
   }
 }
 
+function handleAutoComplete(
+  sourceArea: ReturnType<typeof createSourceCardsArea>,
+  gameBoard: ReturnType<typeof createGameBoard>,
+  getCurrentSentence: () => string | undefined,
+  checkButton: HTMLButtonElement,
+  autoCompleteButton: HTMLButtonElement
+): void {
+  const currentSentence = getCurrentSentence();
+  if (!isValidSentence(currentSentence)) {
+    return;
+  }
+
+  const currentRow = gameBoard.getCurrentRowIndex();
+  const rowCards = gameBoard.getRowCards(currentRow);
+  const correctWords = getSentenceWords(currentSentence);
+  const isComplete = rowCards.length === correctWords.length;
+
+  const validationResults = validateSentence(currentSentence, rowCards);
+  const isCorrect = validationResults.every((result) => result.isCorrect);
+
+  if (isComplete && isCorrect) {
+    return;
+  }
+
+  autoCompleteButton.disabled = true;
+  autoCompleteSentence(currentSentence, sourceArea, gameBoard).then(() => {
+    const newRowCards = gameBoard.getRowCards(currentRow);
+    const newValidationResults = validateSentence(currentSentence, newRowCards);
+    highlightCardsByValidation(newRowCards, newValidationResults);
+
+    const newIsCorrect = newValidationResults.every((result) => result.isCorrect);
+    const newIsComplete = newRowCards.length === correctWords.length;
+
+    if (newIsComplete) {
+      checkButton.disabled = false;
+      if (newIsCorrect) {
+        switchToContinueMode(checkButton);
+      } else {
+        switchToCheckMode(checkButton);
+      }
+    }
+
+    updateAutoCompleteButtonState(currentSentence, gameBoard, autoCompleteButton);
+    autoCompleteButton.disabled = false;
+  });
+}
+
+function updateAutoCompleteButtonState(
+  sentence: string | undefined,
+  gameBoard: ReturnType<typeof createGameBoard>,
+  autoCompleteButton: HTMLButtonElement
+): void {
+  if (!isValidSentence(sentence)) {
+    autoCompleteButton.disabled = true;
+    return;
+  }
+
+  const currentRow = gameBoard.getCurrentRowIndex();
+  const rowCards = gameBoard.getRowCards(currentRow);
+  const correctWords = getSentenceWords(sentence);
+  const isComplete = rowCards.length === correctWords.length;
+
+  const validationResults = validateSentence(sentence, rowCards);
+  const isCorrect = validationResults.every((result) => result.isCorrect);
+
+  autoCompleteButton.disabled = isComplete && isCorrect;
+}
+
 function startNewRound(
   sentence: string,
   sourceArea: ReturnType<typeof createSourceCardsArea>,
   gameBoard: ReturnType<typeof createGameBoard>,
   checkButton: HTMLButtonElement,
+  autoCompleteButton: HTMLButtonElement,
   getCurrentSentence: () => string | undefined
 ): void {
   const words = getSentenceWords(sentence);
@@ -187,10 +273,17 @@ function startNewRound(
   sourceArea.reset(words);
   checkButton.disabled = true;
   switchToCheckMode(checkButton);
+  updateAutoCompleteButtonState(sentence, gameBoard, autoCompleteButton);
   const rowCards = gameBoard.getRowCards(currentRow);
   clearAllHighlights(rowCards);
-  setupCardClickHandlers(sourceArea, gameBoard, getCurrentSentence, checkButton);
-  setupPlacedCardClickHandlers(sourceArea, gameBoard, getCurrentSentence, checkButton);
+  setupCardClickHandlers(sourceArea, gameBoard, getCurrentSentence, checkButton, autoCompleteButton);
+  setupPlacedCardClickHandlers(
+    sourceArea,
+    gameBoard,
+    getCurrentSentence,
+    checkButton,
+    autoCompleteButton
+  );
 }
 
 function handleNewGame(
@@ -198,6 +291,7 @@ function handleNewGame(
   sourceArea: ReturnType<typeof createSourceCardsArea>,
   gameBoard: ReturnType<typeof createGameBoard>,
   checkButton: HTMLButtonElement,
+  autoCompleteButton: HTMLButtonElement,
   getCurrentSentence: () => string | undefined
 ): void {
   gameBoard.clearAllRows();
@@ -206,7 +300,10 @@ function handleNewGame(
   switchToCheckMode(checkButton);
   const firstSentence = sentences[0];
   if (isValidSentence(firstSentence)) {
-    startNewRound(firstSentence, sourceArea, gameBoard, checkButton, getCurrentSentence);
+    updateAutoCompleteButtonState(firstSentence, gameBoard, autoCompleteButton);
+    startNewRound(firstSentence, sourceArea, gameBoard, checkButton, autoCompleteButton, getCurrentSentence);
+  } else {
+    autoCompleteButton.disabled = true;
   }
 }
 
@@ -217,6 +314,7 @@ function handleContinue(
   getCurrentRoundIndex: () => number,
   setCurrentRoundIndex: (_index: number) => void,
   checkButton: HTMLButtonElement,
+  autoCompleteButton: HTMLButtonElement,
   getCurrentSentence: () => string | undefined
 ): void {
   const currentRow = gameBoard.getCurrentRowIndex();
@@ -237,7 +335,7 @@ function handleContinue(
       const modal = createAlertModal('Congratulations! You completed all rounds!', 'OK');
       modal.show().then(() => {
         setCurrentRoundIndex(0);
-        handleNewGame(sentences, sourceArea, gameBoard, checkButton, getCurrentSentence);
+        handleNewGame(sentences, sourceArea, gameBoard, checkButton, autoCompleteButton, getCurrentSentence);
       });
       return;
     }
@@ -247,7 +345,7 @@ function handleContinue(
       const modal = createAlertModal('Congratulations! You completed all rounds!', 'OK');
       modal.show().then(() => {
         setCurrentRoundIndex(0);
-        handleNewGame(sentences, sourceArea, gameBoard, checkButton, getCurrentSentence);
+        handleNewGame(sentences, sourceArea, gameBoard, checkButton, autoCompleteButton, getCurrentSentence);
       });
       return;
     }
@@ -256,7 +354,7 @@ function handleContinue(
     if (isValidSentence(sentence)) {
       gameBoard.setCurrentRowIndex(nextRow);
       setCurrentRoundIndex(nextRound);
-      startNewRound(sentence, sourceArea, gameBoard, checkButton, getCurrentSentence);
+      startNewRound(sentence, sourceArea, gameBoard, checkButton, autoCompleteButton, getCurrentSentence);
     }
     return;
   }
@@ -283,7 +381,7 @@ function handleContinue(
     const modal = createAlertModal('Congratulations! You completed all rounds!', 'OK');
     modal.show().then(() => {
       setCurrentRoundIndex(0);
-      handleNewGame(sentences, sourceArea, gameBoard, checkButton, getCurrentSentence);
+      handleNewGame(sentences, sourceArea, gameBoard, checkButton, autoCompleteButton, getCurrentSentence);
     });
     return;
   }
@@ -291,7 +389,7 @@ function handleContinue(
   const sentence = sentences[nextRound];
   if (isValidSentence(sentence)) {
     setCurrentRoundIndex(nextRound);
-    startNewRound(sentence, sourceArea, gameBoard, checkButton, getCurrentSentence);
+    startNewRound(sentence, sourceArea, gameBoard, checkButton, autoCompleteButton, getCurrentSentence);
   }
 }
 
@@ -346,7 +444,11 @@ export default function renderGamePage(container: HTMLElement): void {
   const controlsContainer = document.createElement('div');
   controlsContainer.className = 'game-controls';
 
+  const controlsLeft = document.createElement('div');
+  controlsLeft.className = 'game-controls-left';
+
   const checkButton = createCheckButton();
+  const autoCompleteButton = createAutoCompleteButton();
 
   const getCurrentSentence = (): string | undefined => {
     return sentences[currentRoundIndex];
@@ -355,12 +457,16 @@ export default function renderGamePage(container: HTMLElement): void {
   const newGameButton = createNewGameButton();
   newGameButton.addEventListener('click', () => {
     currentRoundIndex = 0;
-    handleNewGame(sentences, sourceArea, gameBoard, checkButton, getCurrentSentence);
+    handleNewGame(sentences, sourceArea, gameBoard, checkButton, autoCompleteButton, getCurrentSentence);
   });
-  controlsContainer.appendChild(newGameButton);
+  controlsLeft.appendChild(newGameButton);
 
   const handleCheckClick = (): void => {
     handleCheck(gameBoard, getCurrentSentence, checkButton);
+    const currentSentence = getCurrentSentence();
+    if (isValidSentence(currentSentence)) {
+      updateAutoCompleteButtonState(currentSentence, gameBoard, autoCompleteButton);
+    }
   };
 
   const handleContinueClick = (): void => {
@@ -373,6 +479,7 @@ export default function renderGamePage(container: HTMLElement): void {
         currentRoundIndex = index;
       },
       checkButton,
+      autoCompleteButton,
       getCurrentSentence
     );
     switchToCheckMode(checkButton);
@@ -385,7 +492,14 @@ export default function renderGamePage(container: HTMLElement): void {
       handleContinueClick();
     }
   });
-  controlsContainer.appendChild(checkButton);
+  controlsLeft.appendChild(checkButton);
+
+  controlsContainer.appendChild(controlsLeft);
+
+  autoCompleteButton.addEventListener('click', () => {
+    handleAutoComplete(sourceArea, gameBoard, getCurrentSentence, checkButton, autoCompleteButton);
+  });
+  controlsContainer.appendChild(autoCompleteButton);
 
   gameContent.appendChild(controlsContainer);
 
@@ -395,6 +509,6 @@ export default function renderGamePage(container: HTMLElement): void {
 
   const firstSentence = sentences[0];
   if (isValidSentence(firstSentence)) {
-    startNewRound(firstSentence, sourceArea, gameBoard, checkButton, getCurrentSentence);
+    startNewRound(firstSentence, sourceArea, gameBoard, checkButton, autoCompleteButton, getCurrentSentence);
   }
 }

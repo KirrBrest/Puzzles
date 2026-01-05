@@ -450,8 +450,26 @@
 .game-controls {
   display: flex;
   gap: 16px;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
+  position: relative;
+  max-width: 1020px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.game-controls-left {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex: 1;
+  justify-content: center;
+}
+
+.auto-complete-button {
+  padding-left: 24px;
+  border-left: 2px solid var(--color-border);
 }
 
 .new-game-button,
@@ -491,5 +509,46 @@
   opacity: 0.5;
   cursor: not-allowed;
   background-color: var(--color-border);
+}
+
+.auto-complete-button {
+  padding: 10px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #8b6914;
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  border: 2px solid #ffb300;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease,
+    box-shadow 0.2s ease;
+  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
+}
+
+.auto-complete-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ffed4e 0%, #ffd700 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 215, 0, 0.4);
+}
+
+.auto-complete-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
+}
+
+.auto-complete-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #e0e0e0;
+  border-color: #bdbdbd;
+  color: #9e9e9e;
+  box-shadow: none;
+}
+
+.game-board-row .word-card-placed {
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
 }
 
