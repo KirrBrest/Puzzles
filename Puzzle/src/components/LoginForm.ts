@@ -2,6 +2,7 @@ import createInputField from './InputField';
 import createLoginButton from './LoginButton';
 import { validateNameField, formatNameInput } from '../utils/validation';
 import { saveUserData, getUserData } from '../utils/storage';
+import renderGamePage from '../pages/GamePage';
 
 function updateFieldError(
   errorElement: HTMLElement,
@@ -19,7 +20,7 @@ function updateFieldError(
   }
 }
 
-export default function createLoginForm(): HTMLElement {
+export default function createLoginForm(container: HTMLElement): HTMLElement {
   const form = document.createElement('form');
   form.className = 'login-form';
   form.setAttribute('novalidate', '');
@@ -89,6 +90,7 @@ export default function createLoginForm(): HTMLElement {
 
       try {
         saveUserData(userData);
+        renderGamePage(container);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to save user data';
         updateFieldError(surnameField.errorMessage, surnameField.input, errorMessage);
