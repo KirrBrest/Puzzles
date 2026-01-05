@@ -153,6 +153,80 @@
   box-sizing: border-box;
 }
 
+.word-card-correct {
+  background-color: rgba(33, 150, 243, 0.15) !important;
+  border-color: #2196f3 !important;
+  color: #1976d2;
+}
+
+.word-card-correct.word-card-start,
+.word-card-correct.word-card-middle,
+.word-card-correct.word-card-end {
+  border-left-color: #2196f3 !important;
+  border-right-color: #2196f3 !important;
+  border-top-color: #2196f3 !important;
+  border-bottom-color: #2196f3 !important;
+}
+
+.word-card-correct.word-card-start::after {
+  border-color: #2196f3 !important;
+  border-left: none;
+  border-top-color: #2196f3 !important;
+  border-bottom-color: #2196f3 !important;
+}
+
+.word-card-correct.word-card-end::before {
+  border-color: #2196f3 !important;
+  border-right: none;
+  border-top-color: #2196f3 !important;
+  border-bottom-color: #2196f3 !important;
+}
+
+.word-card-correct.word-card-middle::before,
+.word-card-correct.word-card-middle::after {
+  border-color: #2196f3 !important;
+  border-left: none;
+  border-top-color: #2196f3 !important;
+  border-bottom-color: #2196f3 !important;
+}
+
+.word-card-incorrect {
+  background-color: rgba(255, 152, 0, 0.15) !important;
+  border-color: #ff9800 !important;
+  color: #f57c00;
+}
+
+.word-card-incorrect.word-card-start,
+.word-card-incorrect.word-card-middle,
+.word-card-incorrect.word-card-end {
+  border-left-color: #ff9800 !important;
+  border-right-color: #ff9800 !important;
+  border-top-color: #ff9800 !important;
+  border-bottom-color: #ff9800 !important;
+}
+
+.word-card-incorrect.word-card-start::after {
+  border-color: #ff9800 !important;
+  border-left: none;
+  border-top-color: #ff9800 !important;
+  border-bottom-color: #ff9800 !important;
+}
+
+.word-card-incorrect.word-card-end::before {
+  border-color: #ff9800 !important;
+  border-right: none;
+  border-top-color: #ff9800 !important;
+  border-bottom-color: #ff9800 !important;
+}
+
+.word-card-incorrect.word-card-middle::before,
+.word-card-incorrect.word-card-middle::after {
+  border-color: #ff9800 !important;
+  border-left: none;
+  border-top-color: #ff9800 !important;
+  border-bottom-color: #ff9800 !important;
+}
+
 .source-cards-area {
   width: 100%;
   display: flex;
@@ -381,7 +455,8 @@
 }
 
 .new-game-button,
-.continue-button {
+.continue-button,
+.check-button {
   padding: 10px 20px;
   font-size: 0.85rem;
   font-weight: 600;
@@ -398,18 +473,21 @@
 }
 
 .new-game-button:hover,
-.continue-button:hover:not(:disabled) {
+.continue-button:hover:not(:disabled),
+.check-button:hover:not(:disabled) {
   background-color: var(--color-primary-dark);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px var(--color-shadow);
 }
 
 .new-game-button:active,
-.continue-button:active:not(:disabled) {
+.continue-button:active:not(:disabled),
+.check-button:active:not(:disabled) {
   transform: translateY(0);
 }
 
-.continue-button:disabled {
+.continue-button:disabled,
+.check-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   background-color: var(--color-border);
