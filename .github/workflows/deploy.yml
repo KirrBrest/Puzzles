@@ -33,32 +33,50 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./Puzzle
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Build
         working-directory: ./Puzzle
         env:
           NODE_ENV: production
           GITHUB_PAGES: 'true'
-        run: npm run build
+        run: |
+          echo "Starting build..."
+          npm run build || (echo "Build failed!" && exit 1)
+          echo "Build completed successfully"
 
       - name: Verify build output
         run: |
-          echo "Checking build output:"
+          echo "=== Checking build output ==="
+          echo "Current directory: $(pwd)"
+          echo "Contents of Puzzle/:"
+          ls -la Puzzle/ || echo "Puzzle directory not found"
+          echo "Contents of Puzzle/dist/:"
           ls -la Puzzle/dist/ || echo "dist directory not found"
-          if [ ! -d "Puzzle/dist" ] || [ -z "$(ls -A Puzzle/dist)" ]; then
-            echo "Error: Build failed - dist directory is empty or does not exist"
+          if [ ! -d "Puzzle/dist" ]; then
+            echo "ERROR: Puzzle/dist directory does not exist"
             exit 1
           fi
+          if [ -z "$(ls -A Puzzle/dist)" ]; then
+            echo "ERROR: Puzzle/dist directory is empty"
+            exit 1
+          fi
+          echo "Build output verified successfully"
 
       - name: Prepare deployment structure
         run: |
+          echo "=== Preparing deployment structure ==="
           mkdir -p deploy/Puzzle
-          cp -r Puzzle/dist/. deploy/Puzzle/
+          echo "Copying files from Puzzle/dist/ to deploy/Puzzle/"
+          cp -r Puzzle/dist/. deploy/Puzzle/ || (echo "ERROR: Failed to copy files" && exit 1)
           echo "Deployment structure prepared:"
           ls -la deploy/Puzzle/
           echo "Checking index.html exists:"
-          test -f deploy/Puzzle/index.html || (echo "Error: index.html not found" && exit 1)
+          if [ ! -f "deploy/Puzzle/index.html" ]; then
+            echo "ERROR: index.html not found in deploy/Puzzle/"
+            exit 1
+          fi
+          echo "Deployment structure verified successfully"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
