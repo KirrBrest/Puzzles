@@ -1,6 +1,7 @@
 import createInputField from './InputField';
 import createLoginButton from './LoginButton';
 import { validateNameField, formatNameInput } from '../utils/validation';
+import { saveUserData, getUserData } from '../utils/storage';
 
 function updateFieldError(
   errorElement: HTMLElement,
@@ -64,6 +65,13 @@ export default function createLoginForm(): HTMLElement {
     validateForm();
   };
 
+  const savedData = getUserData();
+  if (savedData) {
+    firstNameField.input.value = savedData.firstName;
+    surnameField.input.value = savedData.surname;
+    validateForm();
+  }
+
   firstNameField.input.addEventListener('input', handleFirstNameInput);
   firstNameField.input.addEventListener('blur', validateForm);
   surnameField.input.addEventListener('input', handleSurnameInput);
@@ -72,6 +80,20 @@ export default function createLoginForm(): HTMLElement {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     validateForm();
+
+    if (firstNameValid && surnameValid) {
+      const userData = {
+        firstName: firstNameField.input.value.trim(),
+        surname: surnameField.input.value.trim(),
+      };
+
+      try {
+        saveUserData(userData);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to save user data';
+        updateFieldError(surnameField.errorMessage, surnameField.input, errorMessage);
+      }
+    }
   });
 
   form.appendChild(firstNameField.container);
