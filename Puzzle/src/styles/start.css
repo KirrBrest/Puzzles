@@ -68,6 +68,39 @@
   max-width: 700px;
 }
 
+.start-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.start-button {
+  padding: 14px 36px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--color-button-text);
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease,
+    box-shadow 0.2s ease;
+}
+
+.start-button:hover {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px var(--color-shadow);
+}
+
+.start-button:active {
+  transform: translateY(0);
+}
+
 .logout-button {
   padding: 12px 30px;
   font-size: 1.1rem;

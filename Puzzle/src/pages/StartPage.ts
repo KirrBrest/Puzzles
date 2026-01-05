@@ -1,7 +1,9 @@
 import createLogoutButton from '../components/LogoutButton';
+import createStartButton from '../components/StartButton';
 import { createConfirmModal, createAlertModal } from '../components/ConfirmModal';
 import { clearUserData, getUserData } from '../utils/storage';
 import renderLoginPage from './LoginPage';
+import renderGamePage from './GamePage';
 
 function clearContainer(container: HTMLElement): void {
   while (container.firstChild) {
@@ -70,11 +72,22 @@ export default function renderStartPage(container: HTMLElement): void {
     'RSS Puzzle is an interactive mini-game aimed at enhancing English language skills. Players assemble sentences from jumbled words. The game integrates various levels of difficulty, hint options, and a unique puzzle-like experience with artwork.';
   content.appendChild(description);
 
+  const buttonsContainer = document.createElement('div');
+  buttonsContainer.className = 'start-buttons';
+
+  const startButton = createStartButton();
+  startButton.addEventListener('click', () => {
+    renderGamePage(container);
+  });
+  buttonsContainer.appendChild(startButton);
+
   const logoutButton = createLogoutButton();
   logoutButton.addEventListener('click', () => {
     handleLogout(container);
   });
-  content.appendChild(logoutButton);
+  buttonsContainer.appendChild(logoutButton);
+
+  content.appendChild(buttonsContainer);
 
   startPage.appendChild(content);
   container.appendChild(startPage);
