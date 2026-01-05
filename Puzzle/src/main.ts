@@ -1,9 +1,10 @@
 import './styles.css';
 import './styles/login.css';
 import './styles/game.css';
+import './styles/start.css';
 import './styles/modal.css';
 import renderLoginPage from './pages/LoginPage';
-import renderGamePage from './pages/GamePage';
+import renderStartPage from './pages/StartPage';
 import isUserLoggedIn from './utils/auth';
 
 function initApp(): void {
@@ -14,7 +15,7 @@ function initApp(): void {
   }
 
   if (isUserLoggedIn()) {
-    renderGamePage(appElement);
+    renderStartPage(appElement);
   } else {
     renderLoginPage(appElement);
   }
