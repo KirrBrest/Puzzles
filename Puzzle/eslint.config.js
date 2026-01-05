@@ -43,8 +43,10 @@ export default tseslint.config(
         {
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
         },
       ],
+      'no-unused-vars': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
       'import/extensions': [
         'error',
