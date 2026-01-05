@@ -45,7 +45,13 @@ export function createConfirmModal(
 
       let isResolved = false;
 
-      let cleanup: () => void;
+      const cleanup = (): void => {
+        document.body.removeChild(modalOverlay);
+        confirmButton.removeEventListener('click', handleConfirm);
+        cancelButton.removeEventListener('click', handleCancel);
+        modalOverlay.removeEventListener('click', handleOverlayClick);
+        document.removeEventListener('keydown', handleEscape);
+      };
 
       const handleConfirm = (): void => {
         if (isResolved) return;
@@ -71,14 +77,6 @@ export function createConfirmModal(
         if (e.key === 'Escape') {
           handleCancel();
         }
-      };
-
-      cleanup = (): void => {
-        document.body.removeChild(modalOverlay);
-        confirmButton.removeEventListener('click', handleConfirm);
-        cancelButton.removeEventListener('click', handleCancel);
-        modalOverlay.removeEventListener('click', handleOverlayClick);
-        document.removeEventListener('keydown', handleEscape);
       };
 
       confirmButton.addEventListener('click', handleConfirm);
@@ -127,7 +125,13 @@ export function createAlertModal(
       document.body.appendChild(modalOverlay);
 
       let isResolved = false;
-      let cleanup: () => void;
+
+      const cleanup = (): void => {
+        document.body.removeChild(modalOverlay);
+        continueButton.removeEventListener('click', handleContinue);
+        modalOverlay.removeEventListener('click', handleOverlayClick);
+        document.removeEventListener('keydown', handleEscape);
+      };
 
       function handleContinue(): void {
         if (isResolved) return;
@@ -147,13 +151,6 @@ export function createAlertModal(
           handleContinue();
         }
       }
-
-      cleanup = (): void => {
-        document.body.removeChild(modalOverlay);
-        continueButton.removeEventListener('click', handleContinue);
-        modalOverlay.removeEventListener('click', handleOverlayClick);
-        document.removeEventListener('keydown', handleEscape);
-      };
 
       continueButton.addEventListener('click', handleContinue);
       modalOverlay.addEventListener('click', handleOverlayClick);

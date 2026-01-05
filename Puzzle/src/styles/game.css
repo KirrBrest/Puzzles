@@ -3,7 +3,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: 0 20px 20px 20px;
   animation: fadeIn 0.3s ease-in;
 }
 
@@ -21,7 +21,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px 0;
-  margin-bottom: 40px;
+  margin-bottom: 5px;
   border-bottom: 2px solid var(--color-border);
   flex-wrap: wrap;
   gap: 16px;
@@ -71,8 +71,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 30px;
-  max-width: 1200px;
+  gap: 5px;
+  max-width: 1020px;
   width: 100%;
   margin: 0 auto;
 }
@@ -90,8 +90,8 @@
 }
 
 .game-board-row {
-  min-height: 60px;
-  height: 60px;
+  min-height: 51px;
+  height: 51px;
   display: flex;
   align-items: stretch;
   gap: 0;
@@ -141,7 +141,7 @@
 
 .word-card-placed {
   border-radius: 0;
-  padding: 12px 20px;
+  padding: 10px 17px;
   height: 100%;
   min-height: 0;
   border-top: 1px solid rgba(74, 144, 226, 0.5);
@@ -157,10 +157,10 @@
   width: 100%;
   display: flex;
   flex-wrap: wrap;
-  gap: clamp(0.95rem, 1vw, 1.25rem);
+  gap: clamp(0.65rem, 1vw, 1.0rem);
   justify-content: flex-start;
   align-items: flex-start;
-  padding: 20px;
+  padding: 10px;
   background-color: var(--color-background);
   border: 2px solid var(--color-border);
   border-radius: 8px;
@@ -172,8 +172,8 @@
 }
 
 .word-card {
-  padding: 12px 20px;
-  font-size: 1rem;
+  padding: 10px 17px;
+  font-size: 0.85rem;
   font-weight: 500;
   color: var(--color-text);
   background-color: var(--color-background);
@@ -186,12 +186,12 @@
     box-shadow 0.2s ease;
   user-select: none;
   position: relative;
-  min-height: 44px;
+  min-height: 37px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: clamp(60px, 5vw, 80px);
-  max-width: clamp(150px, 20vw, 300px);
+  min-width: clamp(51px, 4.25vw, 68px);
+  max-width: clamp(127px, 17vw, 255px);
   box-sizing: border-box;
 }
 
@@ -209,8 +209,8 @@
 .word-card-start {
   border-left: 2px solid var(--color-primary);
   border-right: 2px solid var(--color-primary);
-  padding-right: 24px;
-  padding-left: 12px;
+  padding-right: 20px;
+  padding-left: 10px;
   border-radius: 0;
   margin-right: 0;
   position: relative;
@@ -221,8 +221,8 @@
   border-right: 2px solid rgba(74, 144, 226, 0.5) !important;
   border-top: 1px solid rgba(74, 144, 226, 0.5) !important;
   border-bottom: 1px solid rgba(74, 144, 226, 0.5) !important;
-  padding-right: 24px;
-  padding-left: 12px;
+  padding-right: 20px;
+  padding-left: 10px;
 }
 
 .word-card-placed.word-card-start::after {
@@ -235,25 +235,25 @@
 .word-card-start::after {
   content: '';
   position: absolute;
-  right: -14px;
+  right: -12px;
   top: 50%;
   transform: translateY(-50%);
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   background-color: var(--color-background);
   border: 2px solid var(--color-primary);
   border-left: none;
   border-top-width: 1px;
   border-bottom-width: 1px;
-  border-radius: 0 14px 14px 0;
+  border-radius: 0 12px 12px 0;
   z-index: 2;
 }
 
 .word-card-end {
   border-left: 2px solid var(--color-primary);
   border-right: 2px solid var(--color-primary);
-  padding-left: 24px;
-  padding-right: 12px;
+  padding-left: 20px;
+  padding-right: 10px;
   border-radius: 0;
   margin-left: 0;
   position: relative;
@@ -264,8 +264,8 @@
   border-right: 2px solid rgba(74, 144, 226, 0.5) !important;
   border-top: 1px solid rgba(74, 144, 226, 0.5) !important;
   border-bottom: 1px solid rgba(74, 144, 226, 0.5) !important;
-  padding-left: 24px;
-  padding-right: 12px;
+  padding-left: 20px;
+  padding-right: 10px;
 }
 
 .word-card-placed.word-card-end::before {
@@ -279,26 +279,26 @@
 .word-card-end::before {
   content: '';
   position: absolute;
-  left: -4px;
+  left: -3px;
   top: 50%;
   transform: translateY(-50%);
-  width: 14px;
-  height: 28px;
+  width: 12px;
+  height: 24px;
   background-color: var(--color-background);
   border: 2px solid var(--color-primary);
   border-right: none;
   border-left: none;
   border-top-width: 1px;
   border-bottom-width: 1px;
-  border-radius: 0 14px 14px 0;
+  border-radius: 0 12px 12px 0;
   z-index: 2;
 }
 
 .word-card-middle {
   border-left: 2px solid var(--color-primary);
   border-right: 2px solid var(--color-primary);
-  padding-left: 24px;
-  padding-right: 24px;
+  padding-left: 20px;
+  padding-right: 20px;
   border-radius: 0;
   margin-left: 0;
   margin-right: 0;
@@ -310,8 +310,8 @@
   border-right: 2px solid rgba(74, 144, 226, 0.5) !important;
   border-top: 1px solid rgba(74, 144, 226, 0.5) !important;
   border-bottom: 1px solid rgba(74, 144, 226, 0.5) !important;
-  padding-left: 24px;
-  padding-right: 24px;
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
 .word-card-placed.word-card-middle::before {
@@ -335,32 +335,32 @@
   left: -2px;
   top: 50%;
   transform: translateY(-50%);
-  width: 18px;
-  height: 28px;
+  width: 15px;
+  height: 24px;
   background-color: var(--color-background);
   border: 2px solid var(--color-primary);
   border-right: none;
   border-left: none;
   border-top-width: 1px;
   border-bottom-width: 1px;
-  border-radius: 0 14px 14px 0;
+  border-radius: 0 12px 12px 0;
   z-index: 2;
 }
 
 .word-card-middle::after {
   content: '';
   position: absolute;
-  right: -14px;
+  right: -12px;
   top: 50%;
   transform: translateY(-50%);
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   background-color: var(--color-background);
   border: 2px solid var(--color-primary);
   border-left: none;
   border-top-width: 1px;
   border-bottom-width: 1px;
-  border-radius: 0 14px 14px 0;
+  border-radius: 0 12px 12px 0;
   z-index: 2;
 }
 
@@ -381,9 +381,9 @@
 }
 
 .new-game-button,
-.new-row-button {
-  padding: 12px 24px;
-  font-size: 1rem;
+.continue-button {
+  padding: 10px 20px;
+  font-size: 0.85rem;
   font-weight: 600;
   font-family: inherit;
   color: var(--color-button-text);
@@ -398,14 +398,20 @@
 }
 
 .new-game-button:hover,
-.new-row-button:hover {
+.continue-button:hover:not(:disabled) {
   background-color: var(--color-primary-dark);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px var(--color-shadow);
 }
 
 .new-game-button:active,
-.new-row-button:active {
+.continue-button:active:not(:disabled) {
   transform: translateY(0);
+}
+
+.continue-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--color-border);
 }
 

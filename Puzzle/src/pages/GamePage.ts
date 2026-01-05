@@ -5,7 +5,7 @@ import renderLoginPage from './LoginPage';
 import createGameBoard from '../components/GameBoard';
 import createSourceCardsArea from '../components/SourceCardsArea';
 import createNewGameButton from '../components/NewGameButton';
-import createNewRowButton from '../components/NewRowButton';
+import createContinueButton from '../components/ContinueButton';
 import { getSentencesForGame, getSentenceWords } from '../utils/levelLoader';
 import { WordCardResult } from '../components/WordCard';
 
@@ -17,6 +17,22 @@ function clearContainer(container: HTMLElement): void {
 
 function isValidSentence(sentence: string | undefined): sentence is string {
   return typeof sentence === 'string' && sentence.length > 0;
+}
+
+function isSentenceCorrect(
+  sentence: string,
+  gameBoard: ReturnType<typeof createGameBoard>
+): boolean {
+  const words = getSentenceWords(sentence);
+  const currentRow = gameBoard.getCurrentRowIndex();
+  const rowCards = gameBoard.getRowCards(currentRow);
+
+  if (rowCards.length !== words.length) {
+    return false;
+  }
+
+  const cardWords = rowCards.map((card) => card.textContent?.trim() || '');
+  return cardWords.every((word, index) => word === words[index]);
 }
 
 function showErrorMessage(message: string): void {
@@ -43,7 +59,9 @@ function handleLogout(container: HTMLElement): void {
 function handleCardClick(
   card: WordCardResult,
   sourceArea: ReturnType<typeof createSourceCardsArea>,
-  gameBoard: ReturnType<typeof createGameBoard>
+  gameBoard: ReturnType<typeof createGameBoard>,
+  getCurrentSentence: () => string | undefined,
+  continueButton: HTMLButtonElement
 ): void {
   if (card.isUsed) {
     return;
@@ -52,12 +70,21 @@ function handleCardClick(
   const currentRow = gameBoard.getCurrentRowIndex();
   gameBoard.addCardToRow(currentRow, card.element);
   sourceArea.removeCard(card);
+
+  const currentSentence = getCurrentSentence();
+  if (isValidSentence(currentSentence)) {
+    continueButton.disabled = !isSentenceCorrect(currentSentence, gameBoard);
+  } else {
+    continueButton.disabled = true;
+  }
 }
 
 function handlePlacedCardClick(
   cardElement: HTMLElement,
   sourceArea: ReturnType<typeof createSourceCardsArea>,
-  gameBoard: ReturnType<typeof createGameBoard>
+  gameBoard: ReturnType<typeof createGameBoard>,
+  getCurrentSentence: () => string | undefined,
+  continueButton: HTMLButtonElement
 ): void {
   const currentRow = gameBoard.getCurrentRowIndex();
   const originalCardId = cardElement.getAttribute('data-original-card-id');
@@ -73,12 +100,21 @@ function handlePlacedCardClick(
   if (card) {
     gameBoard.removeCardFromRow(currentRow, cardElement);
     sourceArea.addCardAtEnd(card);
+
+    const currentSentence = getCurrentSentence();
+    if (isValidSentence(currentSentence)) {
+      continueButton.disabled = !isSentenceCorrect(currentSentence, gameBoard);
+    } else {
+      continueButton.disabled = true;
+    }
   }
 }
 
 function setupCardClickHandlers(
   sourceArea: ReturnType<typeof createSourceCardsArea>,
-  gameBoard: ReturnType<typeof createGameBoard>
+  gameBoard: ReturnType<typeof createGameBoard>,
+  getCurrentSentence: () => string | undefined,
+  continueButton: HTMLButtonElement
 ): void {
   const clickHandler = (e: Event): void => {
     const { target } = e;
@@ -97,7 +133,7 @@ function setupCardClickHandlers(
 
     const card = sourceArea.cards.find((c) => c.element === cardElement);
     if (card && !card.isUsed) {
-      handleCardClick(card, sourceArea, gameBoard);
+      handleCardClick(card, sourceArea, gameBoard, getCurrentSentence, continueButton);
     }
   };
 
@@ -107,65 +143,77 @@ function setupCardClickHandlers(
 
 function setupPlacedCardClickHandlers(
   sourceArea: ReturnType<typeof createSourceCardsArea>,
-  gameBoard: ReturnType<typeof createGameBoard>
+  gameBoard: ReturnType<typeof createGameBoard>,
+  getCurrentSentence: () => string | undefined,
+  continueButton: HTMLButtonElement
 ): void {
   const currentRow = gameBoard.getCurrentRowIndex();
   gameBoard.setupRowClickHandler(currentRow, (cardElement) => {
-    handlePlacedCardClick(cardElement, sourceArea, gameBoard);
+    handlePlacedCardClick(cardElement, sourceArea, gameBoard, getCurrentSentence, continueButton);
   });
 }
 
 function startNewRound(
   sentence: string,
   sourceArea: ReturnType<typeof createSourceCardsArea>,
-  gameBoard: ReturnType<typeof createGameBoard>
+  gameBoard: ReturnType<typeof createGameBoard>,
+  continueButton: HTMLButtonElement,
+  getCurrentSentence: () => string | undefined
 ): void {
   const words = getSentenceWords(sentence);
   const currentRow = gameBoard.getCurrentRowIndex();
   gameBoard.setRowSentence(currentRow, words);
   sourceArea.reset(words);
-  setupCardClickHandlers(sourceArea, gameBoard);
-  setupPlacedCardClickHandlers(sourceArea, gameBoard);
+  continueButton.disabled = true;
+  setupCardClickHandlers(sourceArea, gameBoard, getCurrentSentence, continueButton);
+  setupPlacedCardClickHandlers(sourceArea, gameBoard, getCurrentSentence, continueButton);
 }
 
 function handleNewGame(
   sentences: string[],
   sourceArea: ReturnType<typeof createSourceCardsArea>,
-  gameBoard: ReturnType<typeof createGameBoard>
+  gameBoard: ReturnType<typeof createGameBoard>,
+  continueButton: HTMLButtonElement,
+  getCurrentSentence: () => string | undefined
 ): void {
   gameBoard.clearAllRows();
   gameBoard.setCurrentRowIndex(0);
+  continueButton.disabled = true;
   const firstSentence = sentences[0];
   if (isValidSentence(firstSentence)) {
-    startNewRound(firstSentence, sourceArea, gameBoard);
+    startNewRound(firstSentence, sourceArea, gameBoard, continueButton, getCurrentSentence);
   }
 }
 
-function handleNewRow(
+function handleContinue(
   sentences: string[],
   sourceArea: ReturnType<typeof createSourceCardsArea>,
   gameBoard: ReturnType<typeof createGameBoard>,
   getCurrentRoundIndex: () => number,
-  setCurrentRoundIndex: (_index: number) => void
+  setCurrentRoundIndex: (_index: number) => void,
+  continueButton: HTMLButtonElement,
+  getCurrentSentence: () => string | undefined
 ): void {
   const currentRow = gameBoard.getCurrentRowIndex();
   const currentRound = getCurrentRoundIndex();
   const currentSentence = sentences[currentRound];
 
-  // Check if current row is complete
+  if (!isValidSentence(currentSentence) || !isSentenceCorrect(currentSentence, gameBoard)) {
+    return;
+  }
+
   if (isValidSentence(currentSentence)) {
     const words = getSentenceWords(currentSentence);
     const rowCards = gameBoard.getRowCards(currentRow);
     const isRowComplete = rowCards.length === words.length;
 
     if (isRowComplete) {
-      // Row is complete, move to next row
       const nextRow = currentRow + 1;
       if (nextRow >= 10) {
         const modal = createAlertModal('Congratulations! You completed all rounds!', 'OK');
         modal.show().then(() => {
           setCurrentRoundIndex(0);
-          handleNewGame(sentences, sourceArea, gameBoard);
+          handleNewGame(sentences, sourceArea, gameBoard, continueButton, getCurrentSentence);
         });
         return;
       }
@@ -175,7 +223,7 @@ function handleNewRow(
         const modal = createAlertModal('Congratulations! You completed all rounds!', 'OK');
         modal.show().then(() => {
           setCurrentRoundIndex(0);
-          handleNewGame(sentences, sourceArea, gameBoard);
+          handleNewGame(sentences, sourceArea, gameBoard, continueButton, getCurrentSentence);
         });
         return;
       }
@@ -184,13 +232,12 @@ function handleNewRow(
       if (isValidSentence(sentence)) {
         gameBoard.setCurrentRowIndex(nextRow);
         setCurrentRoundIndex(nextRound);
-        startNewRound(sentence, sourceArea, gameBoard);
+        startNewRound(sentence, sourceArea, gameBoard, continueButton, getCurrentSentence);
       }
       return;
     }
   }
 
-  // Row is incomplete, clear it and start new round on same row
   const rowCards = gameBoard.getRowCards(currentRow);
   rowCards.forEach((cardElement) => {
     const originalCardId = cardElement.getAttribute('data-original-card-id');
@@ -213,7 +260,7 @@ function handleNewRow(
     const modal = createAlertModal('Congratulations! You completed all rounds!', 'OK');
     modal.show().then(() => {
       setCurrentRoundIndex(0);
-      handleNewGame(sentences, sourceArea, gameBoard);
+      handleNewGame(sentences, sourceArea, gameBoard, continueButton, getCurrentSentence);
     });
     return;
   }
@@ -221,7 +268,7 @@ function handleNewRow(
   const sentence = sentences[nextRound];
   if (isValidSentence(sentence)) {
     setCurrentRoundIndex(nextRound);
-    startNewRound(sentence, sourceArea, gameBoard);
+    startNewRound(sentence, sourceArea, gameBoard, continueButton, getCurrentSentence);
   }
 }
 
@@ -276,26 +323,33 @@ export default function renderGamePage(container: HTMLElement): void {
   const controlsContainer = document.createElement('div');
   controlsContainer.className = 'game-controls';
 
+  const continueButton = createContinueButton();
+
+  const getCurrentSentence = (): string | undefined => {
+    return sentences[currentRoundIndex];
+  };
+
   const newGameButton = createNewGameButton();
   newGameButton.addEventListener('click', () => {
     currentRoundIndex = 0;
-    handleNewGame(sentences, sourceArea, gameBoard);
+    handleNewGame(sentences, sourceArea, gameBoard, continueButton, getCurrentSentence);
   });
   controlsContainer.appendChild(newGameButton);
 
-  const newRowButton = createNewRowButton();
-  newRowButton.addEventListener('click', () => {
-    handleNewRow(
+  continueButton.addEventListener('click', () => {
+    handleContinue(
       sentences,
       sourceArea,
       gameBoard,
       () => currentRoundIndex,
       (index) => {
         currentRoundIndex = index;
-      }
+      },
+      continueButton,
+      getCurrentSentence
     );
   });
-  controlsContainer.appendChild(newRowButton);
+  controlsContainer.appendChild(continueButton);
 
   gameContent.appendChild(controlsContainer);
 
@@ -305,6 +359,6 @@ export default function renderGamePage(container: HTMLElement): void {
 
   const firstSentence = sentences[0];
   if (isValidSentence(firstSentence)) {
-    startNewRound(firstSentence, sourceArea, gameBoard);
+    startNewRound(firstSentence, sourceArea, gameBoard, continueButton, getCurrentSentence);
   }
 }
