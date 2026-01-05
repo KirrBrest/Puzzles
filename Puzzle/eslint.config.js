@@ -60,6 +60,7 @@ export default tseslint.config(
           devDependencies: ['**/*.config.ts', '**/*.config.js', '**/vite.config.ts'],
         },
       ],
+      'no-param-reassign': ['error', { props: false }],
     },
     settings: {
       'import/resolver': {
