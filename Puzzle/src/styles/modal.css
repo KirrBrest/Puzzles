@@ -43,6 +43,8 @@
 
 .modal-content {
   padding: 24px;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-message {
@@ -50,12 +52,18 @@
   color: var(--color-text);
   margin-bottom: 24px;
   line-height: 1.5;
+  text-align: center;
 }
 
 .modal-buttons {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.modal-buttons:has(.modal-button-confirm:only-child) {
+  justify-content: center;
 }
 
 .modal-button {

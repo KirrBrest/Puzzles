@@ -23,6 +23,8 @@
   padding: 20px 0;
   margin-bottom: 40px;
   border-bottom: 2px solid var(--color-border);
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .game-title {

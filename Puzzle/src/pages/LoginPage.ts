@@ -14,7 +14,7 @@ export default function renderLoginPage(container: HTMLElement): void {
 
   const title = document.createElement('h1');
   title.className = 'login-title';
-  title.textContent = 'Puzzle Game';
+  title.textContent = 'English Puzzle';
   loginPage.appendChild(title);
 
   const formContainer = createLoginForm(container);

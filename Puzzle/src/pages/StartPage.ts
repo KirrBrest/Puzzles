@@ -1,6 +1,6 @@
 import createLogoutButton from '../components/LogoutButton';
-import createConfirmModal from '../components/ConfirmModal';
-import { clearUserData } from '../utils/storage';
+import { createConfirmModal, createAlertModal } from '../components/ConfirmModal';
+import { clearUserData, getUserData } from '../utils/storage';
 import renderLoginPage from './LoginPage';
 
 function clearContainer(container: HTMLElement): void {
@@ -10,8 +10,17 @@ function clearContainer(container: HTMLElement): void {
 }
 
 function showErrorMessage(message: string): void {
-  const modal = createConfirmModal(message, 'OK');
+  const modal = createAlertModal(message, 'OK');
   modal.show();
+}
+
+function showWelcomeMessage(): void {
+  const userData = getUserData();
+  if (userData) {
+    const greeting = `Welcome, ${userData.firstName} ${userData.surname}!`;
+    const welcomeModal = createAlertModal(greeting, 'Continue');
+    welcomeModal.show();
+  }
 }
 
 function handleLogout(container: HTMLElement): void {
@@ -69,4 +78,6 @@ export default function renderStartPage(container: HTMLElement): void {
 
   startPage.appendChild(content);
   container.appendChild(startPage);
+
+  showWelcomeMessage();
 }

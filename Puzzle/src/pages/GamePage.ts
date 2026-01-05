@@ -1,5 +1,5 @@
 import createLogoutButton from '../components/LogoutButton';
-import createConfirmModal from '../components/ConfirmModal';
+import { createConfirmModal, createAlertModal } from '../components/ConfirmModal';
 import { clearUserData } from '../utils/storage';
 import renderLoginPage from './LoginPage';
 
@@ -10,7 +10,7 @@ function clearContainer(container: HTMLElement): void {
 }
 
 function showErrorMessage(message: string): void {
-  const modal = createConfirmModal(message, 'OK');
+  const modal = createAlertModal(message, 'OK');
   modal.show();
 }
 
