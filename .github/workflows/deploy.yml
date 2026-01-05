@@ -45,10 +45,23 @@ jobs:
           GITHUB_PAGES: 'true'
         run: npm run build
 
+      - name: Verify build output
+        run: |
+          echo "Checking build output:"
+          ls -la Puzzle/dist/ || echo "dist directory not found"
+          if [ ! -d "Puzzle/dist" ] || [ -z "$(ls -A Puzzle/dist)" ]; then
+            echo "Error: Build failed - dist directory is empty or does not exist"
+            exit 1
+          fi
+
       - name: Prepare deployment structure
         run: |
           mkdir -p deploy/Puzzle
-          cp -r Puzzle/dist/* deploy/Puzzle/
+          cp -r Puzzle/dist/. deploy/Puzzle/
+          echo "Deployment structure prepared:"
+          ls -la deploy/Puzzle/
+          echo "Checking index.html exists:"
+          test -f deploy/Puzzle/index.html || (echo "Error: index.html not found" && exit 1)
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
