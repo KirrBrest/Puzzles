@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+      - puzzle
   workflow_dispatch:
 
 permissions:
