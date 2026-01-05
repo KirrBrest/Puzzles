@@ -3,9 +3,8 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main
-      - master
       - puzzle
+      - gh-pages
   workflow_dispatch:
 
 
@@ -17,12 +16,9 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pages: write
       id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -81,15 +77,16 @@ jobs:
           fi
           echo "Deployment structure verified successfully"
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: './deploy'
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Deploy to gh-pages branch
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git fetch origin gh-pages:gh-pages || true
+          git checkout gh-pages || git checkout -b gh-pages
+          git rm -rf . 2>/dev/null || true
+          mkdir -p Puzzle
+          cp -r deploy/Puzzle/* Puzzle/
+          git add .
+          git commit -m "Deploy from ${{ github.ref_name }}" || exit 0
+          git push origin gh-pages --force
 
