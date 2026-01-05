@@ -1,3 +1,11 @@
+import calculateCardWidths from '../utils/cardWidthCalculator';
+import { getCardPaddingByIndex } from '../utils/cardPadding';
+import {
+  getCurrentRowIndex as getCurrentRowIndexUtil,
+  setCurrentRowIndex as setCurrentRowIndexUtil,
+  setupRowClickHandler as setupRowClickHandlerUtil,
+} from '../utils/rowClickHandler';
+
 const ROWS_COUNT = 10;
 
 export interface GameBoardResult {
@@ -11,10 +19,8 @@ export interface GameBoardResult {
   setCurrentRowIndex: (_index: number) => void;
   setRowSentence: (_rowIndex: number, _words: string[]) => void;
   setupRowClickHandler: (_rowIndex: number, _handler: (_cardElement: HTMLElement) => void) => void;
+  getRowCards: (_rowIndex: number) => HTMLElement[];
 }
-
-let currentRowIndex = 0;
-const rowClickHandlers = new Map<number, (e: Event) => void>();
 
 export default function createGameBoard(): GameBoardResult {
   const board = document.createElement('div');
@@ -31,66 +37,6 @@ export default function createGameBoard(): GameBoardResult {
     }
     board.appendChild(row);
     rows.push(row);
-  }
-
-  function getCardPadding(card: HTMLElement): { left: number; right: number } {
-    if (card.classList.contains('word-card-start')) {
-      return { left: 12, right: 24 };
-    }
-    if (card.classList.contains('word-card-end')) {
-      return { left: 24, right: 12 };
-    }
-    if (card.classList.contains('word-card-middle')) {
-      return { left: 24, right: 24 };
-    }
-    return { left: 20, right: 20 };
-  }
-
-  function isNumberArray(value: unknown): value is number[] {
-    return Array.isArray(value) && value.every((item) => typeof item === 'number');
-  }
-
-  function calculateCardWidths(row: HTMLElement): void {
-    const rowCards = Array.from(row.children).filter(
-      (child): child is HTMLElement => child instanceof HTMLElement
-    );
-    if (rowCards.length === 0) {
-      return;
-    }
-
-    const sentenceData = row.getAttribute('data-sentence-ratios');
-    const totalPaddingBordersData = row.getAttribute('data-total-padding-borders');
-    if (!sentenceData || !totalPaddingBordersData) {
-      return;
-    }
-
-    const parsed = JSON.parse(sentenceData);
-    if (!isNumberArray(parsed)) {
-      return;
-    }
-    const sentenceRatios = parsed;
-    const totalRatio = sentenceRatios.reduce((sum, ratio) => sum + ratio, 0);
-    const totalPaddingAndBorders = parseFloat(totalPaddingBordersData);
-
-    if (totalRatio > 0) {
-      const rowWidth = row.getBoundingClientRect().width || row.offsetWidth;
-      const borderWidth = 2;
-      const availableWidth = rowWidth - totalPaddingAndBorders;
-
-      if (availableWidth > 0) {
-        rowCards.forEach((card) => {
-          const ratio = parseFloat(card.getAttribute('data-width-ratio') || '0');
-          if (ratio > 0) {
-            const padding = getCardPadding(card);
-            const cardContentWidth = (ratio / totalRatio) * availableWidth;
-            const cardTotalWidth =
-              cardContentWidth + padding.left + padding.right + borderWidth * 2;
-            const widthPercentage = (cardTotalWidth / rowWidth) * 100;
-            card.style.setProperty('--card-width', `${widthPercentage}%`);
-          }
-        });
-      }
-    }
   }
 
   function addCardToRow(rowIndex: number, card: HTMLElement): void {
@@ -135,41 +81,19 @@ export default function createGameBoard(): GameBoardResult {
     rowIndex: number,
     handler: (cardElement: HTMLElement) => void
   ): void {
-    rows.forEach((r, index) => {
-      const existingHandler = rowClickHandlers.get(index);
-      if (existingHandler) {
-        r.removeEventListener('click', existingHandler);
-        rowClickHandlers.delete(index);
-      }
-    });
+    setupRowClickHandlerUtil(rowIndex, rows, handler);
+  }
 
+  function getRowCards(rowIndex: number): HTMLElement[] {
     if (rowIndex >= 0 && rowIndex < rows.length) {
       const row = rows[rowIndex];
       if (row) {
-        const clickHandler = (e: Event): void => {
-          if (rowIndex !== currentRowIndex) {
-            return;
-          }
-
-          const { target } = e;
-          if (!(target instanceof HTMLElement)) {
-            return;
-          }
-
-          let cardElement: HTMLElement | null = target;
-          while (cardElement && !cardElement.classList.contains('word-card-placed')) {
-            cardElement = cardElement.parentElement;
-          }
-
-          if (cardElement && cardElement.parentNode === row) {
-            handler(cardElement);
-          }
-        };
-
-        rowClickHandlers.set(rowIndex, clickHandler);
-        row.addEventListener('click', clickHandler);
+        return Array.from(row.children).filter(
+          (child): child is HTMLElement => child instanceof HTMLElement
+        );
       }
     }
+    return [];
   }
 
   function clearRow(rowIndex: number): void {
@@ -192,30 +116,11 @@ export default function createGameBoard(): GameBoardResult {
   }
 
   function getCurrentRowIndex(): number {
-    return currentRowIndex;
+    return getCurrentRowIndexUtil();
   }
 
   function setCurrentRowIndex(index: number): void {
-    if (index >= 0 && index < ROWS_COUNT) {
-      rows.forEach((row, i) => {
-        if (i === index) {
-          row.classList.add('active-row');
-        } else {
-          row.classList.remove('active-row');
-        }
-      });
-      currentRowIndex = index;
-    }
-  }
-
-  function getCardPaddingByIndex(index: number, total: number): { left: number; right: number } {
-    if (index === 0) {
-      return { left: 12, right: 24 };
-    }
-    if (index === total - 1) {
-      return { left: 24, right: 12 };
-    }
-    return { left: 24, right: 24 };
+    setCurrentRowIndexUtil(index, rows);
   }
 
   function setRowSentence(rowIndex: number, words: string[]): void {
@@ -262,5 +167,6 @@ export default function createGameBoard(): GameBoardResult {
     setCurrentRowIndex,
     setRowSentence,
     setupRowClickHandler,
+    getRowCards,
   };
 }

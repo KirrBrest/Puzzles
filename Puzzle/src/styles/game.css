@@ -157,7 +157,7 @@
   width: 100%;
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: clamp(0.95rem, 1vw, 1.25rem);
   justify-content: flex-start;
   align-items: flex-start;
   padding: 20px;
