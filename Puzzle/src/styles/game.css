@@ -117,6 +117,26 @@
   justify-content: center;
   flex-shrink: 0;
   flex-grow: 0;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease,
+    box-shadow 0.2s ease;
+}
+
+.game-board-row .word-card-placed {
+  cursor: pointer;
+}
+
+.game-board-row.active-row .word-card-placed:hover {
+  background-color: var(--color-primary-light);
+  transform: translateY(-1px);
+}
+
+.game-board-row:not(.active-row) .word-card-placed {
+  cursor: default;
+  pointer-events: none;
+  opacity: 0.7;
 }
 
 .word-card-placed {

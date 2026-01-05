@@ -54,6 +54,28 @@ function handleCardClick(
   sourceArea.removeCard(card);
 }
 
+function handlePlacedCardClick(
+  cardElement: HTMLElement,
+  sourceArea: ReturnType<typeof createSourceCardsArea>,
+  gameBoard: ReturnType<typeof createGameBoard>
+): void {
+  const currentRow = gameBoard.getCurrentRowIndex();
+  const originalCardId = cardElement.getAttribute('data-original-card-id');
+  if (!originalCardId) {
+    return;
+  }
+
+  const card = sourceArea.cards.find((c) => {
+    const cardId = c.element.getAttribute('data-card-id');
+    return cardId === originalCardId;
+  });
+
+  if (card) {
+    gameBoard.removeCardFromRow(currentRow, cardElement);
+    sourceArea.addCardAtEnd(card);
+  }
+}
+
 function setupCardClickHandlers(
   sourceArea: ReturnType<typeof createSourceCardsArea>,
   gameBoard: ReturnType<typeof createGameBoard>
@@ -83,6 +105,16 @@ function setupCardClickHandlers(
   sourceArea.container.addEventListener('click', clickHandler);
 }
 
+function setupPlacedCardClickHandlers(
+  sourceArea: ReturnType<typeof createSourceCardsArea>,
+  gameBoard: ReturnType<typeof createGameBoard>
+): void {
+  const currentRow = gameBoard.getCurrentRowIndex();
+  gameBoard.setupRowClickHandler(currentRow, (cardElement) => {
+    handlePlacedCardClick(cardElement, sourceArea, gameBoard);
+  });
+}
+
 function startNewRound(
   sentence: string,
   sourceArea: ReturnType<typeof createSourceCardsArea>,
@@ -93,6 +125,7 @@ function startNewRound(
   gameBoard.setRowSentence(currentRow, words);
   sourceArea.reset(words);
   setupCardClickHandlers(sourceArea, gameBoard);
+  setupPlacedCardClickHandlers(sourceArea, gameBoard);
 }
 
 function handleNewGame(

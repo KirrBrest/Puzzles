@@ -6,9 +6,11 @@ export interface SourceCardsAreaResult {
   cards: WordCardResult[];
   removeCard: (_card: WordCardResult) => void;
   addCard: (_card: WordCardResult) => void;
+  addCardAtEnd: (_card: WordCardResult) => void;
   clearAll: () => void;
   reset: (_words: string[]) => void;
   updateCardStyles: () => void;
+  findCardByElement: (_element: HTMLElement) => WordCardResult | undefined;
 }
 
 function updateCardStyles(cards: WordCardResult[]): void {
@@ -46,6 +48,9 @@ export default function createSourceCardsArea(words: string[]): SourceCardsAreaR
   );
 
   const shuffledCards = shuffleArray([...cards]);
+  shuffledCards.forEach((card, index) => {
+    card.shuffledIndex = index;
+  });
   cards.length = 0;
   cards.push(...shuffledCards);
 
@@ -73,6 +78,28 @@ export default function createSourceCardsArea(words: string[]): SourceCardsAreaR
     updateCardStyles(cards);
   }
 
+  function addCardAtEnd(card: WordCardResult): void {
+    card.isUsed = false;
+    if (card.element.parentNode !== container) {
+      const availableCards = cards.filter((c) => !c.isUsed && c.element.parentNode === container);
+      const insertIndex = availableCards.findIndex((c) => c.shuffledIndex > card.shuffledIndex);
+
+      if (insertIndex === -1) {
+        container.appendChild(card.element);
+      } else {
+        const nextCard = availableCards[insertIndex];
+        if (nextCard) {
+          container.insertBefore(card.element, nextCard.element);
+        } else {
+          container.appendChild(card.element);
+        }
+      }
+    }
+    const allWords = cards.map((c) => c.word);
+    calculateSourceCardWidth(card, allWords);
+    updateCardStyles(cards);
+  }
+
   function clearAll(): void {
     while (container.firstChild) {
       container.removeChild(container.firstChild);
@@ -91,6 +118,9 @@ export default function createSourceCardsArea(words: string[]): SourceCardsAreaR
     );
 
     const newShuffledCards = shuffleArray([...newCards]);
+    newShuffledCards.forEach((card, index) => {
+      card.shuffledIndex = index;
+    });
 
     newShuffledCards.forEach((card) => {
       calculateSourceCardWidth(card, newWords);
@@ -99,13 +129,19 @@ export default function createSourceCardsArea(words: string[]): SourceCardsAreaR
     });
   }
 
+  function findCardByElement(element: HTMLElement): WordCardResult | undefined {
+    return cards.find((card) => card.element === element);
+  }
+
   return {
     container,
     cards,
     removeCard,
     addCard,
+    addCardAtEnd,
     clearAll,
     reset,
     updateCardStyles: () => updateCardStyles(cards),
+    findCardByElement,
   };
 }

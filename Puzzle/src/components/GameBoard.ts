@@ -4,14 +4,17 @@ export interface GameBoardResult {
   container: HTMLElement;
   rows: HTMLElement[];
   addCardToRow: (_rowIndex: number, _card: HTMLElement) => void;
+  removeCardFromRow: (_rowIndex: number, _cardElement: HTMLElement) => HTMLElement | null;
   clearRow: (_rowIndex: number) => void;
   clearAllRows: () => void;
   getCurrentRowIndex: () => number;
   setCurrentRowIndex: (_index: number) => void;
   setRowSentence: (_rowIndex: number, _words: string[]) => void;
+  setupRowClickHandler: (_rowIndex: number, _handler: (_cardElement: HTMLElement) => void) => void;
 }
 
 let currentRowIndex = 0;
+const rowClickHandlers = new Map<number, (e: Event) => void>();
 
 export default function createGameBoard(): GameBoardResult {
   const board = document.createElement('div');
@@ -23,6 +26,9 @@ export default function createGameBoard(): GameBoardResult {
     const row = document.createElement('div');
     row.className = 'game-board-row';
     row.setAttribute('data-row-index', i.toString());
+    if (i === 0) {
+      row.classList.add('active-row');
+    }
     board.appendChild(row);
     rows.push(row);
   }
@@ -97,12 +103,71 @@ export default function createGameBoard(): GameBoardResult {
         }
 
         cardClone.classList.add('word-card-placed');
+        const cardId = card.getAttribute('data-card-id');
+        if (cardId) {
+          cardClone.setAttribute('data-original-card-id', cardId);
+        }
 
         row.appendChild(cardClone);
 
         setTimeout(() => {
           calculateCardWidths(row);
         }, 0);
+      }
+    }
+  }
+
+  function removeCardFromRow(rowIndex: number, cardElement: HTMLElement): HTMLElement | null {
+    if (rowIndex >= 0 && rowIndex < rows.length) {
+      const row = rows[rowIndex];
+      if (row && cardElement.parentNode === row) {
+        row.removeChild(cardElement);
+        setTimeout(() => {
+          calculateCardWidths(row);
+        }, 0);
+        return cardElement;
+      }
+    }
+    return null;
+  }
+
+  function setupRowClickHandler(
+    rowIndex: number,
+    handler: (cardElement: HTMLElement) => void
+  ): void {
+    rows.forEach((r, index) => {
+      const existingHandler = rowClickHandlers.get(index);
+      if (existingHandler) {
+        r.removeEventListener('click', existingHandler);
+        rowClickHandlers.delete(index);
+      }
+    });
+
+    if (rowIndex >= 0 && rowIndex < rows.length) {
+      const row = rows[rowIndex];
+      if (row) {
+        const clickHandler = (e: Event): void => {
+          if (rowIndex !== currentRowIndex) {
+            return;
+          }
+
+          const { target } = e;
+          if (!(target instanceof HTMLElement)) {
+            return;
+          }
+
+          let cardElement: HTMLElement | null = target;
+          while (cardElement && !cardElement.classList.contains('word-card-placed')) {
+            cardElement = cardElement.parentElement;
+          }
+
+          if (cardElement && cardElement.parentNode === row) {
+            handler(cardElement);
+          }
+        };
+
+        rowClickHandlers.set(rowIndex, clickHandler);
+        row.addEventListener('click', clickHandler);
       }
     }
   }
@@ -132,6 +197,13 @@ export default function createGameBoard(): GameBoardResult {
 
   function setCurrentRowIndex(index: number): void {
     if (index >= 0 && index < ROWS_COUNT) {
+      rows.forEach((row, i) => {
+        if (i === index) {
+          row.classList.add('active-row');
+        } else {
+          row.classList.remove('active-row');
+        }
+      });
       currentRowIndex = index;
     }
   }
@@ -183,10 +255,12 @@ export default function createGameBoard(): GameBoardResult {
     container: board,
     rows,
     addCardToRow,
+    removeCardFromRow,
     clearRow,
     clearAllRows,
     getCurrentRowIndex,
     setCurrentRowIndex,
     setRowSentence,
+    setupRowClickHandler,
   };
 }

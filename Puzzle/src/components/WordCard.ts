@@ -3,6 +3,7 @@ export interface WordCardResult {
   word: string;
   isUsed: boolean;
   originalIndex: number;
+  shuffledIndex: number;
 }
 
 export default function createWordCard(word: string, index: number, total: number): WordCardResult {
@@ -10,6 +11,7 @@ export default function createWordCard(word: string, index: number, total: numbe
   card.className = 'word-card';
   card.textContent = word;
   card.setAttribute('data-word-length', word.length.toString());
+  card.setAttribute('data-card-id', `${word}-${index}`);
 
   if (index === 0) {
     card.classList.add('word-card-start');
@@ -24,5 +26,6 @@ export default function createWordCard(word: string, index: number, total: numbe
     word,
     isUsed: false,
     originalIndex: index,
+    shuffledIndex: index,
   };
 }
