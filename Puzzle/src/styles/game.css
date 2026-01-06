@@ -447,6 +447,45 @@
   box-shadow: none;
 }
 
+.word-card.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+  transform: rotate(5deg);
+}
+
+.source-cards-area.drag-over,
+.game-board-row.drag-over {
+  background-color: rgba(74, 144, 226, 0.1);
+  border-color: rgba(74, 144, 226, 0.5);
+}
+
+.drop-indicator {
+  height: 2px;
+  background-color: var(--color-primary);
+  margin: 2px 0;
+  border-radius: 1px;
+  animation: dropIndicatorPulse 0.5s ease-in-out infinite;
+}
+
+@keyframes dropIndicatorPulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.word-card {
+  cursor: grab;
+  user-select: none;
+}
+
+.word-card:active {
+  cursor: grabbing;
+}
+
 .game-controls {
   display: flex;
   gap: 16px;

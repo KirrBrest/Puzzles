@@ -12,6 +12,9 @@ import { WordCardResult } from '../components/WordCard';
 import { isSentenceComplete, validateSentence } from '../utils/sentenceValidator';
 import { clearAllHighlights, highlightCardsByValidation } from '../utils/cardHighlighter';
 import { autoCompleteSentence } from '../utils/autoComplete';
+import { setupDragAndDrop } from '../utils/dragDropHandler';
+import { setupTouchHandlers } from '../utils/touchHandler';
+import calculateCardWidths from '../utils/cardWidthCalculator';
 
 function clearContainer(container: HTMLElement): void {
   while (container.firstChild) {
@@ -134,7 +137,14 @@ function setupCardClickHandlers(
 
     const card = sourceArea.cards.find((c) => c.element === cardElement);
     if (card && !card.isUsed) {
-      handleCardClick(card, sourceArea, gameBoard, getCurrentSentence, checkButton, autoCompleteButton);
+      handleCardClick(
+        card,
+        sourceArea,
+        gameBoard,
+        getCurrentSentence,
+        checkButton,
+        autoCompleteButton
+      );
     }
   };
 
@@ -259,6 +269,341 @@ function updateAutoCompleteButtonState(
   autoCompleteButton.disabled = isComplete && isCorrect;
 }
 
+function handleDragDrop(
+  target: HTMLElement,
+  card: HTMLElement,
+  _cardData: WordCardResult,
+  insertIndex: number,
+  sourceArea: ReturnType<typeof createSourceCardsArea>,
+  gameBoard: ReturnType<typeof createGameBoard>,
+  getCurrentSentence: () => string | undefined,
+  checkButton: HTMLButtonElement,
+  autoCompleteButton: HTMLButtonElement
+): void {
+  const isSourceArea = target.classList.contains('source-cards-area');
+  const isRow = target.classList.contains('game-board-row');
+
+  if (isSourceArea) {
+    const currentRow = gameBoard.getCurrentRowIndex();
+    const rowCards = gameBoard.getRowCards(currentRow);
+    const cardId = card.getAttribute('data-card-id');
+    const originalCardId = card.getAttribute('data-original-card-id');
+    const cardInRow = rowCards.find((c) => {
+      const cOriginalCardId = c.getAttribute('data-original-card-id');
+      return cOriginalCardId === (originalCardId || cardId);
+    });
+
+    if (cardInRow) {
+      gameBoard.removeCardFromRow(currentRow, cardInRow);
+    }
+
+    const sourceCardId = originalCardId || cardId;
+    if (!sourceCardId) {
+      return;
+    }
+
+    const sourceCard = sourceArea.cards.find((c) => {
+      const cCardId = c.element.getAttribute('data-card-id');
+      return cCardId === sourceCardId;
+    });
+
+    if (sourceCard) {
+      sourceCard.isUsed = false;
+
+      const cardElement = sourceCard.element;
+      cardElement.classList.remove(
+        'word-card-placed',
+        'dragging',
+        'word-card-start',
+        'word-card-middle',
+        'word-card-end'
+      );
+      if (!cardElement.classList.contains('word-card')) {
+        cardElement.classList.add('word-card');
+      }
+      cardElement.removeAttribute('data-original-card-id');
+      cardElement.style.opacity = '';
+      cardElement.style.transform = '';
+
+      sourceArea.addCardAtEnd(sourceCard);
+
+      setTimeout(() => {
+        setupCardClickHandlers(
+          sourceArea,
+          gameBoard,
+          getCurrentSentence,
+          checkButton,
+          autoCompleteButton
+        );
+      }, 0);
+    }
+  } else if (isRow) {
+    const rowIndex = parseInt(target.getAttribute('data-row-index') || '0', 10);
+    const currentRow = gameBoard.getCurrentRowIndex();
+
+    if (rowIndex !== currentRow) {
+      return;
+    }
+
+    const isCardFromRow = card.classList.contains('word-card-placed') && card.parentNode === target;
+
+    if (isCardFromRow) {
+      const currentIndex = Array.from(target.children)
+        .filter(
+          (child): child is HTMLElement =>
+            child instanceof HTMLElement && child.classList.contains('word-card-placed')
+        )
+        .indexOf(card);
+
+      if (currentIndex === -1) {
+        return;
+      }
+
+      const allCardsCount = Array.from(target.children).filter(
+        (child): child is HTMLElement =>
+          child instanceof HTMLElement && child.classList.contains('word-card-placed')
+      ).length;
+
+      let adjustedInsertIndex = insertIndex;
+      if (insertIndex > currentIndex) {
+        adjustedInsertIndex = insertIndex - 1;
+      }
+
+      if (insertIndex >= allCardsCount - 1 && currentIndex !== allCardsCount - 1) {
+        adjustedInsertIndex = allCardsCount - 1;
+      }
+
+      if (currentIndex !== adjustedInsertIndex && adjustedInsertIndex >= 0) {
+        card.classList.remove('dragging');
+        card.style.opacity = '';
+        card.style.transform = '';
+        target.removeChild(card);
+
+        const updatedRowCards = Array.from(target.children).filter(
+          (child): child is HTMLElement =>
+            child instanceof HTMLElement &&
+            child.classList.contains('word-card-placed') &&
+            !child.classList.contains('drop-indicator')
+        );
+
+        if (adjustedInsertIndex >= 0 && adjustedInsertIndex < updatedRowCards.length) {
+          const nextCard = updatedRowCards[adjustedInsertIndex];
+          if (nextCard) {
+            target.insertBefore(card, nextCard);
+          } else {
+            target.appendChild(card);
+          }
+        } else if (adjustedInsertIndex >= updatedRowCards.length || insertIndex >= allCardsCount) {
+          target.appendChild(card);
+        } else if (updatedRowCards.length > 0) {
+          const lastCard = updatedRowCards[updatedRowCards.length - 1];
+          if (lastCard && lastCard.nextSibling) {
+            target.insertBefore(card, lastCard.nextSibling);
+          } else {
+            target.appendChild(card);
+          }
+        } else {
+          target.appendChild(card);
+        }
+      }
+
+      setTimeout(() => {
+        const currentRow = gameBoard.getCurrentRowIndex();
+        const row = gameBoard.rows[currentRow];
+        if (row) {
+          const cards = gameBoard.getRowCards(currentRow);
+          if (cards.length > 0) {
+            calculateCardWidths(row);
+          }
+        }
+      }, 0);
+
+      const currentSentence = getCurrentSentence();
+      if (isValidSentence(currentSentence)) {
+        const currentRow = gameBoard.getCurrentRowIndex();
+        const rowCards = gameBoard.getRowCards(currentRow);
+        checkButton.disabled = !isSentenceComplete(currentSentence, rowCards);
+        clearAllHighlights(rowCards);
+        switchToCheckMode(checkButton);
+        updateAutoCompleteButtonState(currentSentence, gameBoard, autoCompleteButton);
+      }
+      return;
+    }
+
+    const cardId = card.getAttribute('data-card-id');
+    const originalCardId = card.getAttribute('data-original-card-id');
+    const rowCards = gameBoard.getRowCards(currentRow);
+    const cardInRow = rowCards.find((c) => {
+      const cOriginalCardId = c.getAttribute('data-original-card-id');
+      return cOriginalCardId === (originalCardId || cardId);
+    });
+
+    if (cardInRow && cardInRow.parentNode === target) {
+      const existingRowCards = Array.from(target.children).filter(
+        (child): child is HTMLElement =>
+          child instanceof HTMLElement && child.classList.contains('word-card-placed')
+      );
+      const currentIndex = existingRowCards.indexOf(cardInRow);
+
+      if (currentIndex !== insertIndex) {
+        cardInRow.classList.remove('dragging');
+        cardInRow.style.opacity = '';
+        cardInRow.style.transform = '';
+        target.removeChild(cardInRow);
+
+        const updatedRowCards = Array.from(target.children).filter(
+          (child): child is HTMLElement =>
+            child instanceof HTMLElement &&
+            child.classList.contains('word-card-placed') &&
+            !child.classList.contains('drop-indicator')
+        );
+
+        let adjustedInsertIndex = insertIndex;
+        if (insertIndex > currentIndex) {
+          adjustedInsertIndex = insertIndex - 1;
+        }
+
+        if (adjustedInsertIndex >= 0 && adjustedInsertIndex < updatedRowCards.length) {
+          const nextCard = updatedRowCards[adjustedInsertIndex];
+          if (nextCard && nextCard !== cardInRow) {
+            target.insertBefore(cardInRow, nextCard);
+          } else {
+            target.appendChild(cardInRow);
+          }
+        } else if (adjustedInsertIndex >= updatedRowCards.length) {
+          target.appendChild(cardInRow);
+        } else {
+          target.appendChild(cardInRow);
+        }
+      }
+
+      setTimeout(() => {
+        const currentRow = gameBoard.getCurrentRowIndex();
+        const row = gameBoard.rows[currentRow];
+        if (row) {
+          const cards = gameBoard.getRowCards(currentRow);
+          if (cards.length > 0) {
+            calculateCardWidths(row);
+          }
+
+          const currentSentence = getCurrentSentence();
+          if (isValidSentence(currentSentence)) {
+            const rowCards = gameBoard.getRowCards(currentRow);
+            checkButton.disabled = !isSentenceComplete(currentSentence, rowCards);
+            clearAllHighlights(rowCards);
+            switchToCheckMode(checkButton);
+            updateAutoCompleteButtonState(currentSentence, gameBoard, autoCompleteButton);
+          }
+        }
+      }, 0);
+      return;
+    } else {
+      if (!cardId) {
+        return;
+      }
+
+      const sourceCard = sourceArea.cards.find((c) => {
+        const cCardId = c.element.getAttribute('data-card-id');
+        return cCardId === cardId;
+      });
+
+      if (sourceCard) {
+        const cardClone = card.cloneNode(true);
+        if (cardClone instanceof HTMLElement) {
+          cardClone.classList.remove('dragging');
+          cardClone.classList.add('word-card-placed');
+          const words = getSentenceWords(getCurrentSentence() || '');
+          const originalIndex = sourceCard.originalIndex;
+          if (originalIndex === 0) {
+            cardClone.classList.add('word-card-start');
+            cardClone.classList.remove('word-card-middle', 'word-card-end');
+          } else if (originalIndex === words.length - 1) {
+            cardClone.classList.add('word-card-end');
+            cardClone.classList.remove('word-card-start', 'word-card-middle');
+          } else {
+            cardClone.classList.add('word-card-middle');
+            cardClone.classList.remove('word-card-start', 'word-card-end');
+          }
+          cardClone.setAttribute('data-original-card-id', cardId);
+          cardClone.draggable = true;
+          cardClone.setAttribute('data-card-data', JSON.stringify(sourceCard));
+
+          const existingRowCards = gameBoard.getRowCards(currentRow);
+          if (insertIndex >= 0 && insertIndex < existingRowCards.length) {
+            const nextCard = existingRowCards[insertIndex];
+            if (nextCard) {
+              target.insertBefore(cardClone, nextCard);
+            } else {
+              target.appendChild(cardClone);
+            }
+          } else {
+            target.appendChild(cardClone);
+          }
+
+          sourceArea.removeCard(sourceCard);
+        }
+      }
+    }
+  }
+
+  setTimeout(() => {
+    const currentRow = gameBoard.getCurrentRowIndex();
+    const row = gameBoard.rows[currentRow];
+    if (row) {
+      const cards = gameBoard.getRowCards(currentRow);
+      const currentSentence = getCurrentSentence();
+      if (isValidSentence(currentSentence)) {
+        const words = getSentenceWords(currentSentence);
+        cards.forEach((card) => {
+          card.classList.remove('dragging');
+          const originalCardId = card.getAttribute('data-original-card-id');
+          if (originalCardId) {
+            const sourceCard = sourceArea.cards.find((c) => {
+              const cardId = c.element.getAttribute('data-card-id');
+              return cardId === originalCardId;
+            });
+            if (sourceCard) {
+              const originalIndex = sourceCard.originalIndex;
+              card.classList.remove('word-card-start', 'word-card-middle', 'word-card-end');
+              if (originalIndex === 0) {
+                card.classList.add('word-card-start');
+              } else if (originalIndex === words.length - 1) {
+                card.classList.add('word-card-end');
+              } else {
+                card.classList.add('word-card-middle');
+              }
+            }
+          }
+        });
+      }
+      if (cards.length > 0) {
+        calculateCardWidths(row);
+      }
+    }
+
+    const allDraggingCards = document.querySelectorAll(
+      '.word-card.dragging, .word-card-placed.dragging'
+    );
+    allDraggingCards.forEach((card) => {
+      card.classList.remove('dragging');
+      if (card instanceof HTMLElement) {
+        card.style.opacity = '';
+        card.style.transform = '';
+      }
+    });
+  }, 0);
+
+  const currentSentence = getCurrentSentence();
+  if (isValidSentence(currentSentence)) {
+    const currentRow = gameBoard.getCurrentRowIndex();
+    const rowCards = gameBoard.getRowCards(currentRow);
+    checkButton.disabled = !isSentenceComplete(currentSentence, rowCards);
+    clearAllHighlights(rowCards);
+    switchToCheckMode(checkButton);
+    updateAutoCompleteButtonState(currentSentence, gameBoard, autoCompleteButton);
+  }
+}
+
 function startNewRound(
   sentence: string,
   sourceArea: ReturnType<typeof createSourceCardsArea>,
@@ -276,13 +621,69 @@ function startNewRound(
   updateAutoCompleteButtonState(sentence, gameBoard, autoCompleteButton);
   const rowCards = gameBoard.getRowCards(currentRow);
   clearAllHighlights(rowCards);
-  setupCardClickHandlers(sourceArea, gameBoard, getCurrentSentence, checkButton, autoCompleteButton);
+  setupCardClickHandlers(
+    sourceArea,
+    gameBoard,
+    getCurrentSentence,
+    checkButton,
+    autoCompleteButton
+  );
   setupPlacedCardClickHandlers(
     sourceArea,
     gameBoard,
     getCurrentSentence,
     checkButton,
     autoCompleteButton
+  );
+
+  setupDragAndDrop(sourceArea.container, gameBoard.container, {
+    onCardDragStart: () => {},
+    onCardDragEnd: () => {},
+    onCardDrop: (target, card, cardData, insertIndex) => {
+      handleDragDrop(
+        target,
+        card,
+        cardData,
+        insertIndex,
+        sourceArea,
+        gameBoard,
+        getCurrentSentence,
+        checkButton,
+        autoCompleteButton
+      );
+    },
+  });
+
+  const handleTouchDrop = (target: HTMLElement, card: HTMLElement, cardData: unknown): void => {
+    const cardDataObj = typeof cardData === 'string' ? JSON.parse(cardData) : cardData;
+    if (cardDataObj && target) {
+      const insertIndex = 0;
+      handleDragDrop(
+        target,
+        card,
+        cardDataObj as WordCardResult,
+        insertIndex,
+        sourceArea,
+        gameBoard,
+        getCurrentSentence,
+        checkButton,
+        autoCompleteButton
+      );
+    }
+  };
+
+  setupTouchHandlers(
+    sourceArea.container,
+    () => {},
+    () => {},
+    handleTouchDrop
+  );
+
+  setupTouchHandlers(
+    gameBoard.container,
+    () => {},
+    () => {},
+    handleTouchDrop
   );
 }
 
@@ -301,7 +702,14 @@ function handleNewGame(
   const firstSentence = sentences[0];
   if (isValidSentence(firstSentence)) {
     updateAutoCompleteButtonState(firstSentence, gameBoard, autoCompleteButton);
-    startNewRound(firstSentence, sourceArea, gameBoard, checkButton, autoCompleteButton, getCurrentSentence);
+    startNewRound(
+      firstSentence,
+      sourceArea,
+      gameBoard,
+      checkButton,
+      autoCompleteButton,
+      getCurrentSentence
+    );
   } else {
     autoCompleteButton.disabled = true;
   }
@@ -335,7 +743,14 @@ function handleContinue(
       const modal = createAlertModal('Congratulations! You completed all rounds!', 'OK');
       modal.show().then(() => {
         setCurrentRoundIndex(0);
-        handleNewGame(sentences, sourceArea, gameBoard, checkButton, autoCompleteButton, getCurrentSentence);
+        handleNewGame(
+          sentences,
+          sourceArea,
+          gameBoard,
+          checkButton,
+          autoCompleteButton,
+          getCurrentSentence
+        );
       });
       return;
     }
@@ -345,7 +760,14 @@ function handleContinue(
       const modal = createAlertModal('Congratulations! You completed all rounds!', 'OK');
       modal.show().then(() => {
         setCurrentRoundIndex(0);
-        handleNewGame(sentences, sourceArea, gameBoard, checkButton, autoCompleteButton, getCurrentSentence);
+        handleNewGame(
+          sentences,
+          sourceArea,
+          gameBoard,
+          checkButton,
+          autoCompleteButton,
+          getCurrentSentence
+        );
       });
       return;
     }
@@ -354,7 +776,14 @@ function handleContinue(
     if (isValidSentence(sentence)) {
       gameBoard.setCurrentRowIndex(nextRow);
       setCurrentRoundIndex(nextRound);
-      startNewRound(sentence, sourceArea, gameBoard, checkButton, autoCompleteButton, getCurrentSentence);
+      startNewRound(
+        sentence,
+        sourceArea,
+        gameBoard,
+        checkButton,
+        autoCompleteButton,
+        getCurrentSentence
+      );
     }
     return;
   }
@@ -381,7 +810,14 @@ function handleContinue(
     const modal = createAlertModal('Congratulations! You completed all rounds!', 'OK');
     modal.show().then(() => {
       setCurrentRoundIndex(0);
-      handleNewGame(sentences, sourceArea, gameBoard, checkButton, autoCompleteButton, getCurrentSentence);
+      handleNewGame(
+        sentences,
+        sourceArea,
+        gameBoard,
+        checkButton,
+        autoCompleteButton,
+        getCurrentSentence
+      );
     });
     return;
   }
@@ -389,7 +825,14 @@ function handleContinue(
   const sentence = sentences[nextRound];
   if (isValidSentence(sentence)) {
     setCurrentRoundIndex(nextRound);
-    startNewRound(sentence, sourceArea, gameBoard, checkButton, autoCompleteButton, getCurrentSentence);
+    startNewRound(
+      sentence,
+      sourceArea,
+      gameBoard,
+      checkButton,
+      autoCompleteButton,
+      getCurrentSentence
+    );
   }
 }
 
@@ -457,7 +900,14 @@ export default function renderGamePage(container: HTMLElement): void {
   const newGameButton = createNewGameButton();
   newGameButton.addEventListener('click', () => {
     currentRoundIndex = 0;
-    handleNewGame(sentences, sourceArea, gameBoard, checkButton, autoCompleteButton, getCurrentSentence);
+    handleNewGame(
+      sentences,
+      sourceArea,
+      gameBoard,
+      checkButton,
+      autoCompleteButton,
+      getCurrentSentence
+    );
   });
   controlsLeft.appendChild(newGameButton);
 
@@ -509,6 +959,13 @@ export default function renderGamePage(container: HTMLElement): void {
 
   const firstSentence = sentences[0];
   if (isValidSentence(firstSentence)) {
-    startNewRound(firstSentence, sourceArea, gameBoard, checkButton, autoCompleteButton, getCurrentSentence);
+    startNewRound(
+      firstSentence,
+      sourceArea,
+      gameBoard,
+      checkButton,
+      autoCompleteButton,
+      getCurrentSentence
+    );
   }
 }

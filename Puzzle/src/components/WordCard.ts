@@ -12,6 +12,7 @@ export default function createWordCard(word: string, index: number, total: numbe
   card.textContent = word;
   card.setAttribute('data-word-length', word.length.toString());
   card.setAttribute('data-card-id', `${word}-${index}`);
+  card.draggable = true;
 
   if (index === 0) {
     card.classList.add('word-card-start');
@@ -21,11 +22,15 @@ export default function createWordCard(word: string, index: number, total: numbe
     card.classList.add('word-card-middle');
   }
 
-  return {
+  const cardResult: WordCardResult = {
     element: card,
     word,
     isUsed: false,
     originalIndex: index,
     shuffledIndex: index,
   };
+
+  card.setAttribute('data-card-data', JSON.stringify(cardResult));
+
+  return cardResult;
 }

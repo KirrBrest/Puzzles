@@ -49,9 +49,19 @@ export default function createGameBoard(): GameBoardResult {
         }
 
         cardClone.classList.add('word-card-placed');
+        cardClone.draggable = true;
         const cardId = card.getAttribute('data-card-id');
         if (cardId) {
           cardClone.setAttribute('data-original-card-id', cardId);
+          const cardData = card.getAttribute('data-card-data');
+          if (cardData) {
+            cardClone.setAttribute('data-card-data', cardData);
+          } else {
+            const originalCardData = card.getAttribute('data-card-data');
+            if (originalCardData) {
+              cardClone.setAttribute('data-card-data', originalCardData);
+            }
+          }
         }
 
         row.appendChild(cardClone);
@@ -89,7 +99,8 @@ export default function createGameBoard(): GameBoardResult {
       const row = rows[rowIndex];
       if (row) {
         return Array.from(row.children).filter(
-          (child): child is HTMLElement => child instanceof HTMLElement
+          (child): child is HTMLElement =>
+            child instanceof HTMLElement && child.classList.contains('word-card-placed')
         );
       }
     }
