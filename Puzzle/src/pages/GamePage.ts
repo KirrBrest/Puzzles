@@ -189,7 +189,8 @@ function switchToContinueMode(button: HTMLButtonElement): void {
 function handleCheck(
   gameBoard: ReturnType<typeof createGameBoard>,
   getCurrentSentence: () => string | undefined,
-  checkButton: HTMLButtonElement
+  checkButton: HTMLButtonElement,
+  translationHintModal?: ReturnType<typeof createTranslationHintModal>
 ): void {
   const currentSentence = getCurrentSentence();
   if (!isValidSentence(currentSentence)) {
@@ -204,6 +205,13 @@ function handleCheck(
   const isCorrect = validationResults.every((result) => result.isCorrect);
   if (isCorrect) {
     switchToContinueMode(checkButton);
+    if (translationHintModal) {
+      const translation = getTranslationForSentence(currentSentence);
+      if (translation) {
+        translationHintModal.setTranslation(translation);
+        translationHintModal.show();
+      }
+    }
   }
 }
 
@@ -902,45 +910,35 @@ export default function renderGamePage(container: HTMLElement): void {
   header.appendChild(headerCenter);
   headerCenter.appendChild(translationHintModal.element);
 
-  const updateHintTranslation = (): void => {
-    const currentSentence = getCurrentSentence();
-    if (currentSentence) {
-      const translation = getTranslationForSentence(currentSentence);
-      translationHintModal.updateTranslation(translation);
-    } else {
-      translationHintModal.updateTranslation(null);
-    }
-  };
-
   const headerRight = document.createElement('div');
   headerRight.className = 'game-header-right';
 
   const hintButton = createHintButton();
-  hintButton.addEventListener('mouseenter', () => {
+  let isHintEnabled = false;
+
+  const updateHintTranslation = (): void => {
     const currentSentence = getCurrentSentence();
     if (currentSentence) {
       const translation = getTranslationForSentence(currentSentence);
-      if (translation) {
-        translationHintModal.show(translation);
+      translationHintModal.setTranslation(translation);
+      if (isHintEnabled) {
+        translationHintModal.show();
+      } else {
+        translationHintModal.hide();
       }
+    } else {
+      translationHintModal.setTranslation(null);
+      translationHintModal.hide();
     }
+  };
+
+  hintButton.element.addEventListener('click', () => {
+    hintButton.toggle();
+    isHintEnabled = hintButton.isEnabled();
+    updateHintTranslation();
   });
-  hintButton.addEventListener('mouseleave', () => {
-    translationHintModal.hide();
-  });
-  translationHintModal.element.addEventListener('mouseenter', () => {
-    const currentSentence = getCurrentSentence();
-    if (currentSentence) {
-      const translation = getTranslationForSentence(currentSentence);
-      if (translation) {
-        translationHintModal.show(translation);
-      }
-    }
-  });
-  translationHintModal.element.addEventListener('mouseleave', () => {
-    translationHintModal.hide();
-  });
-  headerRight.appendChild(hintButton);
+
+  headerRight.appendChild(hintButton.element);
 
   const logoutButton = createLogoutButton();
   logoutButton.addEventListener('click', () => {
@@ -990,7 +988,12 @@ export default function renderGamePage(container: HTMLElement): void {
   controlsLeft.appendChild(newGameButton);
 
   const handleCheckClick = (): void => {
-    handleCheck(gameBoard, getCurrentSentence, checkButton);
+    handleCheck(
+      gameBoard,
+      getCurrentSentence,
+      checkButton,
+      !isHintEnabled ? translationHintModal : undefined
+    );
     const currentSentence = getCurrentSentence();
     if (isValidSentence(currentSentence)) {
       updateAutoCompleteButtonState(currentSentence, gameBoard, autoCompleteButton);
@@ -998,6 +1001,9 @@ export default function renderGamePage(container: HTMLElement): void {
   };
 
   const handleContinueClick = (): void => {
+    if (!isHintEnabled) {
+      translationHintModal.hide();
+    }
     handleContinue(
       sentences,
       sourceArea,
