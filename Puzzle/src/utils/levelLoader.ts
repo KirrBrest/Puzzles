@@ -77,6 +77,56 @@ export function getSentencesForGame(): string[] {
   return selectedSentences.map((sentence) => sentence.text);
 }
 
+interface SentenceWithTranslation {
+  id: number;
+  text: string;
+  translation: string;
+}
+
+function getUniqueSentencesWithTranslations(levelData: LevelCollection): SentenceWithTranslation[] {
+  const sentencesMap = new Map<number, { text: string; translation: string }>();
+
+  levelData.rounds.forEach((round) => {
+    round.words.forEach((word) => {
+      if (word.textExample && word.textExample.trim() && word.id && word.textExampleTranslate) {
+        if (!sentencesMap.has(word.id)) {
+          sentencesMap.set(word.id, {
+            text: word.textExample.trim(),
+            translation: word.textExampleTranslate.trim(),
+          });
+        }
+      }
+    });
+  });
+
+  return Array.from(sentencesMap.entries()).map(([id, data]) => ({
+    id,
+    text: data.text,
+    translation: data.translation,
+  }));
+}
+
+export function getSentencesWithTranslationsForGame(): SentenceWithTranslation[] {
+  const levelData = loadLevelData();
+  const sentencesWithTranslations = getUniqueSentencesWithTranslations(levelData);
+
+  if (sentencesWithTranslations.length === 0) {
+    throw new Error('No sentences with translations found in level data');
+  }
+
+  const shuffledSentences = shuffleArray([...sentencesWithTranslations]);
+  const selectedSentences = shuffledSentences.slice(0, MAX_ROUNDS);
+
+  return selectedSentences;
+}
+
+export function getTranslationForSentence(sentence: string): string | null {
+  const levelData = loadLevelData();
+  const sentencesWithTranslations = getUniqueSentencesWithTranslations(levelData);
+  const found = sentencesWithTranslations.find((s) => s.text === sentence);
+  return found ? found.translation : null;
+}
+
 export function getSentenceWords(sentence: string): string[] {
   return sentence.split(/\s+/).filter((word) => word.length > 0);
 }

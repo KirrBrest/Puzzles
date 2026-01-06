@@ -1,4 +1,6 @@
 import createLogoutButton from '../components/LogoutButton';
+import createHintButton from '../components/HintButton';
+import { createTranslationHintModal } from '../components/TranslationHintModal';
 import { createConfirmModal, createAlertModal } from '../components/ConfirmModal';
 import { clearUserData } from '../utils/storage';
 import renderLoginPage from './LoginPage';
@@ -7,7 +9,11 @@ import createSourceCardsArea from '../components/SourceCardsArea';
 import createNewGameButton from '../components/NewGameButton';
 import createCheckButton from '../components/CheckButton';
 import createAutoCompleteButton from '../components/AutoCompleteButton';
-import { getSentencesForGame, getSentenceWords } from '../utils/levelLoader';
+import {
+  getSentencesForGame,
+  getSentenceWords,
+  getTranslationForSentence,
+} from '../utils/levelLoader';
 import { WordCardResult } from '../components/WordCard';
 import { isSentenceComplete, validateSentence } from '../utils/sentenceValidator';
 import { clearAllHighlights, highlightCardsByValidation } from '../utils/cardHighlighter';
@@ -610,7 +616,8 @@ function startNewRound(
   gameBoard: ReturnType<typeof createGameBoard>,
   checkButton: HTMLButtonElement,
   autoCompleteButton: HTMLButtonElement,
-  getCurrentSentence: () => string | undefined
+  getCurrentSentence: () => string | undefined,
+  _updateHintTranslation?: () => void
 ): void {
   const words = getSentenceWords(sentence);
   const currentRow = gameBoard.getCurrentRowIndex();
@@ -685,6 +692,10 @@ function startNewRound(
     () => {},
     handleTouchDrop
   );
+
+  if (_updateHintTranslation) {
+    _updateHintTranslation();
+  }
 }
 
 function handleNewGame(
@@ -693,7 +704,8 @@ function handleNewGame(
   gameBoard: ReturnType<typeof createGameBoard>,
   checkButton: HTMLButtonElement,
   autoCompleteButton: HTMLButtonElement,
-  getCurrentSentence: () => string | undefined
+  getCurrentSentence: () => string | undefined,
+  updateHintTranslation?: () => void
 ): void {
   gameBoard.clearAllRows();
   gameBoard.setCurrentRowIndex(0);
@@ -708,10 +720,15 @@ function handleNewGame(
       gameBoard,
       checkButton,
       autoCompleteButton,
-      getCurrentSentence
+      getCurrentSentence,
+      updateHintTranslation
     );
   } else {
     autoCompleteButton.disabled = true;
+  }
+
+  if (updateHintTranslation) {
+    updateHintTranslation();
   }
 }
 
@@ -723,7 +740,8 @@ function handleContinue(
   setCurrentRoundIndex: (_index: number) => void,
   checkButton: HTMLButtonElement,
   autoCompleteButton: HTMLButtonElement,
-  getCurrentSentence: () => string | undefined
+  getCurrentSentence: () => string | undefined,
+  updateHintTranslation?: () => void
 ): void {
   const currentRow = gameBoard.getCurrentRowIndex();
   const currentRound = getCurrentRoundIndex();
@@ -749,7 +767,8 @@ function handleContinue(
           gameBoard,
           checkButton,
           autoCompleteButton,
-          getCurrentSentence
+          getCurrentSentence,
+          updateHintTranslation
         );
       });
       return;
@@ -766,7 +785,8 @@ function handleContinue(
           gameBoard,
           checkButton,
           autoCompleteButton,
-          getCurrentSentence
+          getCurrentSentence,
+          updateHintTranslation
         );
       });
       return;
@@ -782,7 +802,8 @@ function handleContinue(
         gameBoard,
         checkButton,
         autoCompleteButton,
-        getCurrentSentence
+        getCurrentSentence,
+        updateHintTranslation
       );
     }
     return;
@@ -816,7 +837,8 @@ function handleContinue(
         gameBoard,
         checkButton,
         autoCompleteButton,
-        getCurrentSentence
+        getCurrentSentence,
+        updateHintTranslation
       );
     });
     return;
@@ -831,7 +853,8 @@ function handleContinue(
       gameBoard,
       checkButton,
       autoCompleteButton,
-      getCurrentSentence
+      getCurrentSentence,
+      updateHintTranslation
     );
   }
 }
@@ -856,22 +879,76 @@ export default function renderGamePage(container: HTMLElement): void {
   const header = document.createElement('header');
   header.className = 'game-header';
 
+  const headerLeft = document.createElement('div');
+  headerLeft.className = 'game-header-left';
+
   const logo = document.createElement('img');
   logo.src = '/favicon.svg';
   logo.alt = 'RSS Puzzle Logo';
   logo.className = 'game-logo';
-  header.appendChild(logo);
+  headerLeft.appendChild(logo);
 
   const title = document.createElement('h1');
   title.className = 'game-title';
   title.textContent = 'English Puzzle';
-  header.appendChild(title);
+  headerLeft.appendChild(title);
+
+  header.appendChild(headerLeft);
+
+  const headerCenter = document.createElement('div');
+  headerCenter.className = 'game-header-center';
+
+  const translationHintModal = createTranslationHintModal();
+  header.appendChild(headerCenter);
+  headerCenter.appendChild(translationHintModal.element);
+
+  const updateHintTranslation = (): void => {
+    const currentSentence = getCurrentSentence();
+    if (currentSentence) {
+      const translation = getTranslationForSentence(currentSentence);
+      translationHintModal.updateTranslation(translation);
+    } else {
+      translationHintModal.updateTranslation(null);
+    }
+  };
+
+  const headerRight = document.createElement('div');
+  headerRight.className = 'game-header-right';
+
+  const hintButton = createHintButton();
+  hintButton.addEventListener('mouseenter', () => {
+    const currentSentence = getCurrentSentence();
+    if (currentSentence) {
+      const translation = getTranslationForSentence(currentSentence);
+      if (translation) {
+        translationHintModal.show(translation);
+      }
+    }
+  });
+  hintButton.addEventListener('mouseleave', () => {
+    translationHintModal.hide();
+  });
+  translationHintModal.element.addEventListener('mouseenter', () => {
+    const currentSentence = getCurrentSentence();
+    if (currentSentence) {
+      const translation = getTranslationForSentence(currentSentence);
+      if (translation) {
+        translationHintModal.show(translation);
+      }
+    }
+  });
+  translationHintModal.element.addEventListener('mouseleave', () => {
+    translationHintModal.hide();
+  });
+  headerRight.appendChild(hintButton);
 
   const logoutButton = createLogoutButton();
   logoutButton.addEventListener('click', () => {
     handleLogout(container);
   });
-  header.appendChild(logoutButton);
+  headerRight.appendChild(logoutButton);
+
+  header.appendChild(headerRight);
 
   gamePage.appendChild(header);
 
@@ -906,7 +983,8 @@ export default function renderGamePage(container: HTMLElement): void {
       gameBoard,
       checkButton,
       autoCompleteButton,
-      getCurrentSentence
+      getCurrentSentence,
+      updateHintTranslation
     );
   });
   controlsLeft.appendChild(newGameButton);
@@ -930,7 +1008,8 @@ export default function renderGamePage(container: HTMLElement): void {
       },
       checkButton,
       autoCompleteButton,
-      getCurrentSentence
+      getCurrentSentence,
+      updateHintTranslation
     );
     switchToCheckMode(checkButton);
   };
@@ -959,13 +1038,15 @@ export default function renderGamePage(container: HTMLElement): void {
 
   const firstSentence = sentences[0];
   if (isValidSentence(firstSentence)) {
+    updateHintTranslation();
     startNewRound(
       firstSentence,
       sourceArea,
       gameBoard,
       checkButton,
       autoCompleteButton,
-      getCurrentSentence
+      getCurrentSentence,
+      updateHintTranslation
     );
   }
 }
