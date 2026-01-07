@@ -8,11 +8,14 @@ export function getAudioUrl(audioExample: string): string {
   return `${AUDIO_BASE_URL}${audioExample}`;
 }
 
-export function playAudio(audioExample: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const audioUrl = getAudioUrl(audioExample);
-    const audio = new Audio(audioUrl);
+export function playAudio(audioExample: string): {
+  audio: HTMLAudioElement;
+  promise: Promise<void>;
+} {
+  const audioUrl = getAudioUrl(audioExample);
+  const audio = new Audio(audioUrl);
 
+  const promise = new Promise<void>((resolve, reject) => {
     audio.addEventListener('ended', () => {
       resolve();
     });
@@ -25,6 +28,11 @@ export function playAudio(audioExample: string): Promise<void> {
       reject(error);
     });
   });
+
+  return {
+    audio,
+    promise,
+  };
 }
 
 export function stopAudio(): void {
