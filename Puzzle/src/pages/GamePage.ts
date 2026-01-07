@@ -13,7 +13,10 @@ import {
   getSentencesForGame,
   getSentenceWords,
   getTranslationForSentence,
+  getAudioForSentence,
 } from '../utils/levelLoader';
+import createAudioHintButton from '../components/AudioHintButton';
+import { playAudio } from '../utils/audioPlayer';
 import { WordCardResult } from '../components/WordCard';
 import { isSentenceComplete, validateSentence } from '../utils/sentenceValidator';
 import { clearAllHighlights, highlightCardsByValidation } from '../utils/cardHighlighter';
@@ -939,6 +942,26 @@ export default function renderGamePage(container: HTMLElement): void {
   });
 
   headerRight.appendChild(hintButton.element);
+
+  const audioHintButton = createAudioHintButton();
+  audioHintButton.addEventListener('click', () => {
+    const currentSentence = getCurrentSentence();
+    if (currentSentence) {
+      const audioExample = getAudioForSentence(currentSentence);
+      if (audioExample) {
+        audioHintButton.disabled = true;
+        playAudio(audioExample)
+          .then(() => {
+            audioHintButton.disabled = false;
+          })
+          .catch((error) => {
+            console.error('Error playing audio:', error);
+            audioHintButton.disabled = false;
+          });
+      }
+    }
+  });
+  headerRight.appendChild(audioHintButton);
 
   const logoutButton = createLogoutButton();
   logoutButton.addEventListener('click', () => {

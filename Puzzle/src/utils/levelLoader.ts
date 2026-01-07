@@ -127,6 +127,42 @@ export function getTranslationForSentence(sentence: string): string | null {
   return found ? found.translation : null;
 }
 
+interface SentenceWithAudio {
+  id: number;
+  text: string;
+  audio: string;
+}
+
+function getUniqueSentencesWithAudio(levelData: LevelCollection): SentenceWithAudio[] {
+  const sentencesMap = new Map<number, { text: string; audio: string }>();
+
+  levelData.rounds.forEach((round) => {
+    round.words.forEach((word) => {
+      if (word.textExample && word.textExample.trim() && word.id && word.audioExample) {
+        if (!sentencesMap.has(word.id)) {
+          sentencesMap.set(word.id, {
+            text: word.textExample.trim(),
+            audio: word.audioExample.trim(),
+          });
+        }
+      }
+    });
+  });
+
+  return Array.from(sentencesMap.entries()).map(([id, data]) => ({
+    id,
+    text: data.text,
+    audio: data.audio,
+  }));
+}
+
+export function getAudioForSentence(sentence: string): string | null {
+  const levelData = loadLevelData();
+  const sentencesWithAudio = getUniqueSentencesWithAudio(levelData);
+  const found = sentencesWithAudio.find((s) => s.text === sentence);
+  return found ? found.audio : null;
+}
+
 export function getSentenceWords(sentence: string): string[] {
   return sentence.split(/\s+/).filter((word) => word.length > 0);
 }
