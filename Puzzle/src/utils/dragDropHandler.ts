@@ -167,14 +167,9 @@ export function setupDragAndDrop(
     }
 
     try {
-      const { index } = getInsertPosition(
-        dropTarget,
-        e.clientX,
-        e.clientY,
-        dragState.draggedCard
-      );
+      const { index } = getInsertPosition(dropTarget, e.clientX, e.clientY, dragState.draggedCard);
       callbacks.onCardDrop(dropTarget, dragState.draggedCard, dragState.draggedCardData, index);
-    } catch (error) {
+    } catch {
       if (dragState.draggedCard) {
         removeDraggingClass(dragState.draggedCard);
         dragState.draggedCard.style.opacity = '';
@@ -240,4 +235,3 @@ export function makeCardDraggable(card: HTMLElement, cardData: WordCardResult): 
   card.draggable = true;
   card.setAttribute('data-card-data', JSON.stringify(cardData));
 }
-

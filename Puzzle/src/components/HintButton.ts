@@ -7,7 +7,7 @@ export default function createHintButton(): {
   button.className = 'hint-button';
   button.setAttribute('aria-label', 'Toggle translation hint');
   button.innerHTML = '💡';
-  
+
   let enabled = false;
 
   function isEnabled(): boolean {

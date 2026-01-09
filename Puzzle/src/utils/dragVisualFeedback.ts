@@ -14,10 +14,7 @@ export function removeDraggingClass(element: HTMLElement): void {
   element.classList.remove('dragging');
 }
 
-export function addDropIndicator(
-  dropTarget: HTMLElement,
-  beforeElement: HTMLElement | null
-): void {
+export function addDropIndicator(dropTarget: HTMLElement, beforeElement: HTMLElement | null): void {
   removeDropIndicator(dropTarget);
 
   const indicator = document.createElement('div');
@@ -44,4 +41,3 @@ export function removeAllDropIndicators(): void {
     indicator.remove();
   });
 }
-

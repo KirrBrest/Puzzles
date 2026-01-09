@@ -6,7 +6,8 @@
   width: 100%;
   min-height: 100vh;
   padding: 40px 20px;
-  background-image: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)),
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)),
     url('/fantasy-background.jpg');
   background-size: cover;
   background-position: center;

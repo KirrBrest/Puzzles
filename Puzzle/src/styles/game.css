@@ -168,7 +168,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  border: 2px solid #FFD700;
+  border: 2px solid #ffd700;
   border-radius: 8px;
   padding: 12px 20px;
   background-color: var(--color-background);
@@ -273,7 +273,6 @@
     box-shadow 0.2s ease;
 }
 
-
 .game-board-row.active-row .word-card-placed:hover {
   background-color: var(--color-primary-light);
   transform: translateY(-1px);
@@ -377,7 +376,7 @@
   width: 100%;
   display: flex;
   flex-wrap: wrap;
-  gap: clamp(0.65rem, 1vw, 1.0rem);
+  gap: clamp(0.65rem, 1vw, 1rem);
   justify-content: flex-start;
   align-items: flex-start;
   padding: 10px;
@@ -734,6 +733,7 @@
 }
 
 .game-board-row .word-card-placed {
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  transition:
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease;
 }
-

@@ -1,12 +1,11 @@
 import { getDragState, setDragState, resetDragState } from './dragDropManager';
-import { getDropTarget, isDropTarget, getInsertPosition } from './dragDropManager';
+import { getDropTarget, getInsertPosition } from './dragDropManager';
 import {
   addDragOverClass,
   removeDragOverClass,
   addDraggingClass,
   removeDraggingClass,
   addDropIndicator,
-  removeDropIndicator,
   removeAllDropIndicators,
 } from './dragVisualFeedback';
 
@@ -21,8 +20,6 @@ export function setupTouchHandlers(
   onDragEnd: () => void,
   onDrop: (target: HTMLElement, card: HTMLElement, cardData: unknown) => void
 ): void {
-  let touchStartTime = 0;
-  let touchStartPosition = { x: 0, y: 0 };
   let isDragging = false;
   let longPressTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -41,9 +38,6 @@ export function setupTouchHandlers(
     if (!touch) {
       return;
     }
-
-    touchStartTime = Date.now();
-    touchStartPosition = { x: touch.clientX, y: touch.clientY };
 
     longPressTimer = setTimeout(() => {
       isDragging = true;
@@ -147,4 +141,3 @@ export function setupTouchHandlers(
   element.addEventListener('touchend', handleTouchEnd, { passive: false });
   element.addEventListener('touchcancel', handleTouchEnd, { passive: false });
 }
-

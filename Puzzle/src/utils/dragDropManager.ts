@@ -57,7 +57,7 @@ export function getDropTarget(element: HTMLElement): HTMLElement | null {
 export function getInsertPosition(
   dropTarget: HTMLElement,
   x: number,
-  y: number,
+  _y: number,
   draggedCard?: HTMLElement | null
 ): { beforeElement: HTMLElement | null; index: number } {
   const children = Array.from(dropTarget.children).filter(
@@ -75,7 +75,7 @@ export function getInsertPosition(
   if (lastChild) {
     const lastRect = lastChild.getBoundingClientRect();
     const lastRightEdge = lastRect.right;
-    
+
     if (x >= lastRightEdge - lastRect.width * 0.3) {
       return { beforeElement: null, index: children.length };
     }
@@ -97,4 +97,3 @@ export function getInsertPosition(
 
   return { beforeElement: null, index: children.length };
 }
-
