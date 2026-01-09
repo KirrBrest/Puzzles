@@ -1,0 +1,55 @@
+{
+  "name": "puzzle",
+  "version": "1.0.0",
+  "description": "Puzzle project",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css,scss,json,md}\"",
+    "ci:format": "prettier --check \"src/**/*.{ts,tsx,css,scss,json,md}\"",
+    "type-check": "tsc --noEmit",
+    "prepare": "husky"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@eslint/eslintrc": "^3.3.3",
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^22.10.2",
+    "@typescript-eslint/eslint-plugin": "^8.18.1",
+    "@typescript-eslint/parser": "^8.18.1",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "globals": "^16.5.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
+    "prettier": "^3.6.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.50.1",
+    "validate-branch-name": "^1.3.2",
+    "vite": "^7.2.2"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{css,scss,json,md,html}": [
+      "prettier --write"
+    ]
+  },
+  "validate-branch-name": {
+    "pattern": "^(master|main|develop|puzzle)$|^(feature|fix|hotfix|release)/.+$",
+    "errorMsg": "Имя ветки не соответствует установленному шаблону."
+  }
+}
