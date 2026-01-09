@@ -1,5 +1,6 @@
 import createLogoutButton from '../components/LogoutButton';
 import createHintButton from '../components/HintButton';
+import createAudioHintToggleButton from '../components/AudioHintToggleButton';
 import { createTranslationHintModal } from '../components/TranslationHintModal';
 import { createConfirmModal, createAlertModal } from '../components/ConfirmModal';
 import { clearUserData } from '../utils/storage';
@@ -191,7 +192,8 @@ function handleCheck(
   gameBoard: ReturnType<typeof createGameBoard>,
   getCurrentSentence: () => string | undefined,
   checkButton: HTMLButtonElement,
-  translationHintModal?: ReturnType<typeof createTranslationHintModal>
+  translationHintModal?: ReturnType<typeof createTranslationHintModal>,
+  audioHintManager?: ReturnType<typeof createAudioHintManager>
 ): void {
   const currentSentence = getCurrentSentence();
   if (!isValidSentence(currentSentence)) {
@@ -213,6 +215,9 @@ function handleCheck(
         translationHintModal.show();
       }
     }
+    if (audioHintManager && !audioHintManager.isEnabled()) {
+      audioHintManager.enableButton();
+    }
   }
 }
 
@@ -221,7 +226,8 @@ function handleAutoComplete(
   gameBoard: ReturnType<typeof createGameBoard>,
   getCurrentSentence: () => string | undefined,
   checkButton: HTMLButtonElement,
-  autoCompleteButton: HTMLButtonElement
+  autoCompleteButton: HTMLButtonElement,
+  audioHintManager?: ReturnType<typeof createAudioHintManager>
 ): void {
   const currentSentence = getCurrentSentence();
   if (!isValidSentence(currentSentence)) {
@@ -253,6 +259,9 @@ function handleAutoComplete(
       checkButton.disabled = false;
       if (newIsCorrect) {
         switchToContinueMode(checkButton);
+        if (audioHintManager && !audioHintManager.isEnabled()) {
+          audioHintManager.enableButton();
+        }
       } else {
         switchToCheckMode(checkButton);
       }
@@ -626,7 +635,8 @@ function startNewRound(
   checkButton: HTMLButtonElement,
   autoCompleteButton: HTMLButtonElement,
   getCurrentSentence: () => string | undefined,
-  _updateHintTranslation?: () => void
+  _updateHintTranslation?: () => void,
+  audioHintManager?: ReturnType<typeof createAudioHintManager>
 ): void {
   const words = getSentenceWords(sentence);
   const currentRow = gameBoard.getCurrentRowIndex();
@@ -635,6 +645,9 @@ function startNewRound(
   checkButton.disabled = true;
   switchToCheckMode(checkButton);
   updateAutoCompleteButtonState(sentence, gameBoard, autoCompleteButton);
+  if (audioHintManager && !audioHintManager.isEnabled()) {
+    audioHintManager.disableButton();
+  }
   const rowCards = gameBoard.getRowCards(currentRow);
   clearAllHighlights(rowCards);
   setupCardClickHandlers(
@@ -714,7 +727,8 @@ function handleNewGame(
   checkButton: HTMLButtonElement,
   autoCompleteButton: HTMLButtonElement,
   getCurrentSentence: () => string | undefined,
-  updateHintTranslation?: () => void
+  updateHintTranslation?: () => void,
+  audioHintManager?: ReturnType<typeof createAudioHintManager>
 ): void {
   gameBoard.clearAllRows();
   gameBoard.setCurrentRowIndex(0);
@@ -730,7 +744,8 @@ function handleNewGame(
       checkButton,
       autoCompleteButton,
       getCurrentSentence,
-      updateHintTranslation
+      updateHintTranslation,
+      audioHintManager
     );
   } else {
     autoCompleteButton.disabled = true;
@@ -750,7 +765,8 @@ function handleContinue(
   checkButton: HTMLButtonElement,
   autoCompleteButton: HTMLButtonElement,
   getCurrentSentence: () => string | undefined,
-  updateHintTranslation?: () => void
+  updateHintTranslation?: () => void,
+  audioHintManager?: ReturnType<typeof createAudioHintManager>
 ): void {
   const currentRow = gameBoard.getCurrentRowIndex();
   const currentRound = getCurrentRoundIndex();
@@ -777,7 +793,8 @@ function handleContinue(
           checkButton,
           autoCompleteButton,
           getCurrentSentence,
-          updateHintTranslation
+          updateHintTranslation,
+          audioHintManager
         );
       });
       return;
@@ -795,7 +812,8 @@ function handleContinue(
           checkButton,
           autoCompleteButton,
           getCurrentSentence,
-          updateHintTranslation
+          updateHintTranslation,
+          audioHintManager
         );
       });
       return;
@@ -812,7 +830,8 @@ function handleContinue(
         checkButton,
         autoCompleteButton,
         getCurrentSentence,
-        updateHintTranslation
+        updateHintTranslation,
+        audioHintManager
       );
     }
     return;
@@ -847,7 +866,8 @@ function handleContinue(
         checkButton,
         autoCompleteButton,
         getCurrentSentence,
-        updateHintTranslation
+        updateHintTranslation,
+        audioHintManager
       );
     });
     return;
@@ -863,7 +883,8 @@ function handleContinue(
       checkButton,
       autoCompleteButton,
       getCurrentSentence,
-      updateHintTranslation
+      updateHintTranslation,
+      audioHintManager
     );
   }
 }
@@ -911,11 +932,18 @@ export default function renderGamePage(container: HTMLElement): void {
   header.appendChild(headerCenter);
   headerCenter.appendChild(translationHintModal.element);
 
+  const getCurrentSentence = (): string | undefined => {
+    return sentences[currentRoundIndex];
+  };
+
+  const audioHintManager = createAudioHintManager(getCurrentSentence);
+  headerCenter.appendChild(audioHintManager.element);
+
   const headerRight = document.createElement('div');
   headerRight.className = 'game-header-right';
 
   const hintButton = createHintButton();
-  let isHintEnabled = false;
+  let isHintEnabled = true;
 
   const updateHintTranslation = (): void => {
     const currentSentence = getCurrentSentence();
@@ -940,6 +968,14 @@ export default function renderGamePage(container: HTMLElement): void {
   });
 
   headerRight.appendChild(hintButton.element);
+
+  const audioHintToggleButton = createAudioHintToggleButton();
+  audioHintToggleButton.element.addEventListener('click', () => {
+    audioHintToggleButton.toggle();
+    const isAudioEnabled = audioHintToggleButton.isEnabled();
+    audioHintManager.setEnabled(isAudioEnabled);
+  });
+  headerRight.appendChild(audioHintToggleButton.element);
 
   const logoutButton = createLogoutButton();
   logoutButton.addEventListener('click', () => {
@@ -969,13 +1005,6 @@ export default function renderGamePage(container: HTMLElement): void {
   const checkButton = createCheckButton();
   const autoCompleteButton = createAutoCompleteButton();
 
-  const getCurrentSentence = (): string | undefined => {
-    return sentences[currentRoundIndex];
-  };
-
-  const audioHintManager = createAudioHintManager(getCurrentSentence);
-  headerRight.appendChild(audioHintManager.element);
-
   const newGameButton = createNewGameButton();
   newGameButton.addEventListener('click', () => {
     currentRoundIndex = 0;
@@ -986,7 +1015,8 @@ export default function renderGamePage(container: HTMLElement): void {
       checkButton,
       autoCompleteButton,
       getCurrentSentence,
-      updateHintTranslation
+      updateHintTranslation,
+      !audioHintToggleButton.isEnabled() ? audioHintManager : undefined
     );
   });
   controlsLeft.appendChild(newGameButton);
@@ -996,7 +1026,8 @@ export default function renderGamePage(container: HTMLElement): void {
       gameBoard,
       getCurrentSentence,
       checkButton,
-      !isHintEnabled ? translationHintModal : undefined
+      !isHintEnabled ? translationHintModal : undefined,
+      !audioHintToggleButton.isEnabled() ? audioHintManager : undefined
     );
     const currentSentence = getCurrentSentence();
     if (isValidSentence(currentSentence)) {
@@ -1019,7 +1050,8 @@ export default function renderGamePage(container: HTMLElement): void {
       checkButton,
       autoCompleteButton,
       getCurrentSentence,
-      updateHintTranslation
+      updateHintTranslation,
+      !audioHintToggleButton.isEnabled() ? audioHintManager : undefined
     );
     switchToCheckMode(checkButton);
   };
@@ -1036,7 +1068,14 @@ export default function renderGamePage(container: HTMLElement): void {
   controlsContainer.appendChild(controlsLeft);
 
   autoCompleteButton.addEventListener('click', () => {
-    handleAutoComplete(sourceArea, gameBoard, getCurrentSentence, checkButton, autoCompleteButton);
+    handleAutoComplete(
+      sourceArea,
+      gameBoard,
+      getCurrentSentence,
+      checkButton,
+      autoCompleteButton,
+      !audioHintToggleButton.isEnabled() ? audioHintManager : undefined
+    );
   });
   controlsContainer.appendChild(autoCompleteButton);
 
@@ -1056,7 +1095,8 @@ export default function renderGamePage(container: HTMLElement): void {
       checkButton,
       autoCompleteButton,
       getCurrentSentence,
-      updateHintTranslation
+      updateHintTranslation,
+      !audioHintToggleButton.isEnabled() ? audioHintManager : undefined
     );
   }
 }

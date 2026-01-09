@@ -5,10 +5,10 @@ export default function createHintButton(): {
 } {
   const button = document.createElement('button');
   button.className = 'hint-button';
-  button.setAttribute('aria-label', 'Toggle translation hint');
+  button.setAttribute('aria-label', 'Disable translation hint');
   button.innerHTML = '💡';
 
-  let enabled = false;
+  let enabled = true;
 
   function isEnabled(): boolean {
     return enabled;
@@ -24,6 +24,8 @@ export default function createHintButton(): {
       button.setAttribute('aria-label', 'Enable translation hint');
     }
   }
+
+  button.classList.add('active');
 
   return {
     element: button,
